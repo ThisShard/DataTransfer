@@ -8,7 +8,7 @@ namespace ThisShard.Database.Core.Pipelines;
 /// <summary>
 /// Конвейер
 /// </summary>
-public class Pipeline : IPipeline<WritingResult>
+public class Pipeline : IPipeline<PipelineResult>
 {
     private readonly TaskCompletionSource _taskCompletionSource = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -26,7 +26,7 @@ public class Pipeline : IPipeline<WritingResult>
     /// <summary>
     /// Результат завершения задачи конвейера
     /// </summary>
-    public WritingResult? Result { get; private set; }
+    public PipelineResult? Result { get; private set; }
 
     public Pipeline(IEnumerable<IPipelineSource> sources, IEnumerable<IPipelineDestination> destinations)
     {
@@ -62,18 +62,17 @@ public class Pipeline : IPipeline<WritingResult>
     /// <summary>
     /// Работа
     /// </summary>
-    private async Task<WritingResult> Work()
+    private async Task<PipelineResult> Work()
     {
         if (_cancellationTokenSource.IsCancellationRequested)
-            return new WritingResult { State = WritingState.Canceled };
+            return new PipelineResult { State = WritingState.Canceled };
         
         var writers = await GetWriters();
         try
         {
-            var lastResult = new WritingResult
+            var lastResult = new PipelineResult()
             {
                 State = WritingState.Success,
-                Writers = writers
             };
             
             if (_cancellationTokenSource.IsCancellationRequested)
@@ -81,11 +80,20 @@ public class Pipeline : IPipeline<WritingResult>
 
             foreach (var source in _sources)
             {
+                lastResult = lastResult with { LastWrittenSource = source };
+                
                 if (_cancellationTokenSource.IsCancellationRequested)
                     return lastResult with { State = WritingState.Canceled };
                 
                 await using var reader = await source.GetReader();
-                lastResult = await reader.TryWriteTo(writers, _cancellationTokenSource.Token);
+                var writingResult = await reader.TryWriteTo(writers, _cancellationTokenSource.Token);
+                
+                lastResult = lastResult with
+                {
+                    State = writingResult.State, 
+                    LastWrittenRow = writingResult.LastWrittenRow
+                };
+                
                 if (lastResult.State != WritingState.Success)
                     break;
             }

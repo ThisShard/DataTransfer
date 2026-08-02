@@ -14,4 +14,9 @@ public interface IRow
     /// Пытается получить значение ячейки
     /// </summary>
     bool TryGetValue(string columnKey, out object? value);
+    
+    /// <summary>
+    /// Метаданные строки
+    /// </summary>
+    IDictionary<string, object?> Metadata { get; }
 }

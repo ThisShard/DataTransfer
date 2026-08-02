@@ -15,6 +15,11 @@ public class MappedRow : IRow
     /// </summary>
     public RowState State => _mapper.GetRowState(_row);
 
+    /// <summary>
+    /// Метаданные строки
+    /// </summary>
+    public IDictionary<string, object?> Metadata => _row.Metadata;
+
     public MappedRow(IRow row, IRowMapper mapper)
     {
         _row = row ?? throw new ArgumentNullException(nameof(row));

@@ -3,8 +3,13 @@ using ThisShard.Database.Core.Extensions;
 
 namespace ThisShard.Database.Core.Models.Rows;
 
+/// <summary>
+/// Адаптер строки для DataRow
+/// </summary>
 public class DataRowAdapter : IRow
 {
+    private IDictionary<string, object?>? _metadata;
+    
     /// <summary>
     /// Состояние
     /// </summary>
@@ -14,6 +19,11 @@ public class DataRowAdapter : IRow
     /// Исходная строка
     /// </summary>
     public DataRow Row { get; }
+
+    /// <summary>
+    /// Метаданные строки
+    /// </summary>
+    public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;
 
     public DataRowAdapter(DataRow row)
     {
