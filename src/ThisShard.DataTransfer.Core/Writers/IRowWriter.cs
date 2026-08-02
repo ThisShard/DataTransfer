@@ -6,7 +6,7 @@ namespace ThisShard.Database.Core.Writers;
 /// <summary>
 /// Писатель строк
 /// </summary>
-public interface IRowWriter
+public interface IRowWriter : IAsyncDisposable
 {
     /// <summary>
     /// Строки ожидающие обработку
@@ -27,4 +27,9 @@ public interface IRowWriter
     /// Принудительно производит запись
     /// </summary>
     ValueTask Flush();
+
+    /// <summary>
+    /// Завершает запись
+    /// </summary>
+    ValueTask Complete();
 }

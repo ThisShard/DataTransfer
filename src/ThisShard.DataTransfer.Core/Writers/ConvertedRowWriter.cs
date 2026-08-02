@@ -42,8 +42,26 @@ public class ConvertedRowWriter : IRowWriter
         await _innerWriter.Write(convertedRow);
     }
 
+    /// <summary>
+    /// Принудительно производит запись
+    /// </summary>
     public async ValueTask Flush()
     {
         await _innerWriter.Flush();
+    }
+
+    /// <summary>
+    /// Завершает запись
+    /// </summary>
+    public async ValueTask Complete()
+    {
+        await _innerWriter.Complete();
+    }
+
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await _innerWriter.DisposeAsync();
     }
 }
