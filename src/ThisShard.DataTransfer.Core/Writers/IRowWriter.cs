@@ -9,6 +9,11 @@ namespace ThisShard.Database.Core.Writers;
 public interface IRowWriter : IAsyncDisposable
 {
     /// <summary>
+    /// Состояние писателя
+    /// </summary>
+    WriterState State { get; }
+    
+    /// <summary>
     /// Строки ожидающие обработку
     /// </summary>
     IEnumerable<IRow> PendingRows { get; }

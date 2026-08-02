@@ -19,7 +19,12 @@ public class ConvertedTableWriter : ITableWriter
     /// Текущая временная таблица
     /// </summary>
     public IStagingTable? StagingTable => _tableWriter.StagingTable;
-    
+
+    /// <summary>
+    /// Состояние писателя
+    /// </summary>
+    public WriterState State => _tableWriter.State;
+
     /// <summary>
     /// Строки ожидающие обработку
     /// </summary>

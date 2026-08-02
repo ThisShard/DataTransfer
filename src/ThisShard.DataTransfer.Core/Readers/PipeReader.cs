@@ -1,5 +1,4 @@
 using System.Threading.Channels;
-using ThisShard.Database.Core.Models;
 using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Writers;
 
@@ -82,6 +81,11 @@ public class PipeReader : IRowReader
     private class Writer : IRowWriter
     {
         private readonly Channel<IRow> _channel;
+
+        /// <summary>
+        /// Состояние писателя
+        /// </summary>
+        public WriterState State => WriterState.Writing;
 
         /// <summary>
         /// Строки ожидающие обработку

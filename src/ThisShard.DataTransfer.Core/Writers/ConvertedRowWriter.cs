@@ -12,6 +12,11 @@ public class ConvertedRowWriter : IRowWriter
     private readonly Func<IRow, IRow?> _converter;
 
     /// <summary>
+    /// Состояние писателя
+    /// </summary>
+    public WriterState State => _innerWriter.State;
+
+    /// <summary>
     /// Строки ожидающие обработку
     /// </summary>
     public IEnumerable<IRow> PendingRows => _innerWriter.PendingRows;
