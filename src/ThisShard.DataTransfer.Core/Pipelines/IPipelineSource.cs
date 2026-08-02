@@ -3,12 +3,12 @@ using ThisShard.Database.Core.Readers;
 namespace ThisShard.Database.Core.Pipelines;
 
 /// <summary>
-/// Источник данных
+/// Источник данных для конвейера
 /// </summary>
-public interface IPipelineSource
+public interface IPipelineSource : IAsyncDisposable
 {
     /// <summary>
     /// Возвращает читателя
     /// </summary>
-    public IRowReader GetReader();
+    public ValueTask<IRowReader> GetReader();
 }

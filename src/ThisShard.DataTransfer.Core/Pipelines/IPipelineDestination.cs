@@ -2,10 +2,13 @@ using ThisShard.Database.Core.Writers;
 
 namespace ThisShard.Database.Core.Pipelines;
 
-public interface IPipelineDestination
+/// <summary>
+/// Назначение данных для конвейера
+/// </summary>
+public interface IPipelineDestination : IAsyncDisposable
 {
     /// <summary>
     /// Возвращает писателя
     /// </summary>
-    public IRowWriter GetWriter();
+    public ValueTask<IRowWriter> GetWriter();
 }
