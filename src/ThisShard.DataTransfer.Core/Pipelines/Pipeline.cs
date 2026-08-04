@@ -48,6 +48,9 @@ public class Pipeline : IPipeline<PipelineState>
     /// </summary>
     public void Init(PipelineState? state)
     {
+        if (_isStarted)
+            throw new InvalidOperationException("Pipeline is already started");
+        
         _previousState = state;
     }
 

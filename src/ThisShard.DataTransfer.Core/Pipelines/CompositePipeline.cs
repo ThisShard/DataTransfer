@@ -1,36 +1,54 @@
 using ThisShard.Database.Core.Helpers;
 using ThisShard.Database.Core.Models.Results;
+using ThisShard.Database.Core.Models.States;
 
 namespace ThisShard.Database.Core.Pipelines;
 
 /// <summary>
 /// Составной конвейер
 /// </summary>
-public class CompositePipeline<TPipeline> : ICompositePipeline<TPipeline>
-    where TPipeline : IPipeline
+public class CompositePipeline : IPipeline<CompositePipelineState>
 {
     private readonly TaskCompletionSource _taskCompletionSource = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     
-    private readonly TPipeline[] _pipelines;
+    private readonly IPipeline<PipelineState>[] _pipelines;
     private readonly int _maxDop;
     
     private bool _isStarted;
+    private CompositePipelineState? _previousState;
 
+    /// <summary>
+    /// Ключ
+    /// </summary>
+    public string Key { get; }
+    
     /// <summary>
     /// Задача завершения конвейера
     /// </summary>
     public Task Completion => _taskCompletionSource.Task;
 
     /// <summary>
-    /// Пайплайны
+    /// Состояние выполнения задач
     /// </summary>
-    public IEnumerable<TPipeline> Pipelines => _pipelines;
-
-    public CompositePipeline(IEnumerable<TPipeline> pipelines, int maxDop = 1)
+    public CompositePipelineState? State { get; private set; }
+    
+    public CompositePipeline(string key, IEnumerable<IPipeline<PipelineState>> pipelines, int maxDop = 1)
     {
+        Key = key;
         _pipelines = pipelines?.ToArray() ?? throw new ArgumentNullException(nameof(pipelines));
         _maxDop = maxDop;
+    }
+
+    /// <summary>
+    /// Инициализировать предыдущим состоянием перед началом работы
+    /// </summary>
+    public void Init(CompositePipelineState? state)
+    {
+        if (_isStarted)
+            throw new InvalidOperationException("Pipeline is already started");
+        
+        _previousState = state;
     }
 
     /// <summary>
@@ -50,7 +68,10 @@ public class CompositePipeline<TPipeline> : ICompositePipeline<TPipeline>
             else if (task.IsCanceled)
                 _taskCompletionSource.TrySetCanceled();
             else
+            {
                 _taskCompletionSource.TrySetResult();
+                State = task.Result;
+            }
         });
 
         return ValueTask.CompletedTask;
@@ -59,24 +80,79 @@ public class CompositePipeline<TPipeline> : ICompositePipeline<TPipeline>
     /// <summary>
     /// Работа
     /// </summary>
-    private async Task Work()
+    private async Task<CompositePipelineState> Work()
     {
         if (_cancellationTokenSource.IsCancellationRequested)
-            return;
+            return CreateState(WritingState.Canceled);
 
-        await Parallel.ForEachAsync(_pipelines, new ParallelOptions()
-        {
-            CancellationToken =  _cancellationTokenSource.Token,
-            MaxDegreeOfParallelism = _maxDop
-        }, async (pipeline, ct) =>
+        //Процесс в рамках одного пайплайна
+        async ValueTask PipelineProcess(IPipeline<PipelineState> pipeline, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
                 return;
             
+            var previousState = _previousState?.PipelineStates.GetValueOrDefault(pipeline.Key);
+            if (previousState != null)
+            {
+                if (previousState.State == WritingState.Success)
+                    return;
+                
+                pipeline.Init(previousState);
+            }
+            
             await pipeline.Start();
             await pipeline.Completion;
-        });
+        }
+        
+        //Параллельный процесс
+        async Task ParallelWorkProcess()
+        {
+            await Parallel.ForEachAsync(_pipelines, new ParallelOptions()
+            {
+                CancellationToken =  _cancellationTokenSource.Token,
+                MaxDegreeOfParallelism = _maxDop
+            }, PipelineProcess);
+        }
+        
+        //Непараллельный процесс
+        async ValueTask WorkProcess()
+        {
+            foreach (var pipeline in _pipelines)
+            {
+                await PipelineProcess(pipeline, _cancellationTokenSource.Token);
+            }
+        }
+
+        try
+        {
+            if (_maxDop > 1)
+                await ParallelWorkProcess();
+            else
+                await WorkProcess();
+
+            return CreateState(_cancellationTokenSource.IsCancellationRequested
+                ? WritingState.Canceled
+                : WritingState.Success);
+        }
+        catch (Exception ex)
+        {
+            return CreateState(WritingState.Error, ex);
+        }
     }
+
+    /// <summary>
+    /// Создает состояние конвейера
+    /// </summary>
+    private CompositePipelineState CreateState(WritingState state, Exception? exception = null)
+    {
+        return new CompositePipelineState
+        {
+            State = state,
+            Exception = exception,
+            PipelineStates = _pipelines.ToDictionary(x => x.Key, x => x.State)
+        };
+    }
+    
     /// <summary>
     /// Останавливает конвейер
     /// </summary>

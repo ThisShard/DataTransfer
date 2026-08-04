@@ -4,7 +4,7 @@ using ThisShard.Database.Core.Models.Rows;
 namespace ThisShard.Database.Core.Models.States;
 
 /// <summary>
-/// Результат выполнения конвейера
+/// Состояние выполнения конвейера
 /// </summary>
 public record PipelineState
 {
