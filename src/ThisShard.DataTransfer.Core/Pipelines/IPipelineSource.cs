@@ -16,5 +16,5 @@ public interface IPipelineSource : IAsyncDisposable
     /// <summary>
     /// Возвращает читателя
     /// </summary>
-    public ValueTask<IRowReader> GetReader(IRow? lastReadRow = null);
+    public ValueTask<IRowReader> GetReader(IRow? lastWrittenRow = null);
 }

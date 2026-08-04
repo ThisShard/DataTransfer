@@ -52,6 +52,7 @@ public class Pipeline : BasePipeline<PipelineState>
                     break;
                 }
 
+                await using var _ = source;
                 await using var reader = await GetReader(source);
                 var writingResult = await reader.TryWriteTo(writers, ct);
 
