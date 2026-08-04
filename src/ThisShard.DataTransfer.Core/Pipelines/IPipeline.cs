@@ -8,6 +8,11 @@ namespace ThisShard.Database.Core.Pipelines;
 public interface IPipeline : IAsyncDisposable
 {
     /// <summary>
+    /// Ключ
+    /// </summary>
+    string Key { get; }
+    
+    /// <summary>
     /// Запускает конвейер
     /// </summary>
     ValueTask Start();
@@ -24,24 +29,17 @@ public interface IPipeline : IAsyncDisposable
 }
 
 /// <summary>
-/// Конвейер с результатом
+/// Конвейер с состоянием
 /// </summary>
-public interface IPipeline<out TResult> : IPipeline
+public interface IPipeline<TState> : IPipeline
 {
     /// <summary>
-    /// Результат завершения задачи конвейера
+    /// Инициализировать предыдущим состоянием перед началом работы
     /// </summary>
-    TResult? Result { get; }
-}
-
-/// <summary>
-/// Составной конвейер
-/// </summary>
-public interface ICompositePipeline<TPipeline> : IPipeline
-    where TPipeline : IPipeline
-{
+    void Init(TState? state);
+    
     /// <summary>
-    /// Конвейеры
+    /// Состояние выполнения задач
     /// </summary>
-    IEnumerable<TPipeline> Pipelines { get; }
+    TState? State { get; }
 }

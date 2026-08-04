@@ -8,6 +8,11 @@ namespace ThisShard.Database.Core.Pipelines;
 public interface IPipelineDestination : IAsyncDisposable
 {
     /// <summary>
+    /// Ключ
+    /// </summary>
+    public string Key { get; }
+    
+    /// <summary>
     /// Возвращает писателя
     /// </summary>
     public ValueTask<IRowWriter> GetWriter();

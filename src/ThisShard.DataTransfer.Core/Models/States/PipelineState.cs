@@ -6,7 +6,7 @@ namespace ThisShard.Database.Core.Models.Results;
 /// <summary>
 /// Результат выполнения конвейера
 /// </summary>
-public record PipelineResult
+public record PipelineState
 {
     /// <summary>
     /// Состояние записи

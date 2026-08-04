@@ -8,7 +8,7 @@ namespace ThisShard.Database.Core.Pipelines;
 /// <summary>
 /// Конвейер
 /// </summary>
-public class Pipeline : IPipeline<PipelineResult>
+public class Pipeline : IPipeline<PipelineState>
 {
     private readonly TaskCompletionSource _taskCompletionSource = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -16,23 +16,39 @@ public class Pipeline : IPipeline<PipelineResult>
     private readonly IPipelineSource[] _sources;
     private readonly IPipelineDestination[] _destinations;
     
+    private PipelineState? _previousState;
     private bool _isStarted;
+
+    /// <summary>
+    /// Ключ
+    /// </summary>
+    public string Key { get; }
 
     /// <summary>
     /// Задача завершения конвейера
     /// </summary>
     public Task Completion => _taskCompletionSource.Task;
-
+    
     /// <summary>
-    /// Результат завершения задачи конвейера
+    /// Результат задачи конвейера
     /// </summary>
-    public PipelineResult? Result { get; private set; }
+    public PipelineState? State { get; private set; }
 
-    public Pipeline(IEnumerable<IPipelineSource> sources, IEnumerable<IPipelineDestination> destinations)
+    public Pipeline(string key, IEnumerable<IPipelineSource> sources, IEnumerable<IPipelineDestination> destinations)
     {
+        Key = key;
         _sources = sources?.ToArray() ?? throw new ArgumentNullException(nameof(sources));
         _destinations = destinations?.ToArray() ?? throw new ArgumentNullException(nameof(destinations));
     }
+
+    /// <summary>
+    /// Инициализировать предыдущим состоянием перед началом работы
+    /// </summary>
+    public void Init(PipelineState? state)
+    {
+        _previousState = state;
+    }
+
     /// <summary>
     /// Запускает конвейер
     /// </summary>
@@ -52,7 +68,7 @@ public class Pipeline : IPipeline<PipelineResult>
             else
             {
                 _taskCompletionSource.TrySetResult();
-                Result = task.Result;
+                State = task.Result;
             }
         });
 
@@ -62,15 +78,15 @@ public class Pipeline : IPipeline<PipelineResult>
     /// <summary>
     /// Работа
     /// </summary>
-    private async Task<PipelineResult> Work()
+    private async Task<PipelineState> Work()
     {
         if (_cancellationTokenSource.IsCancellationRequested)
-            return new PipelineResult { State = WritingState.Canceled };
+            return new PipelineState { State = WritingState.Canceled };
         
         var writers = await GetWriters();
         try
         {
-            var lastResult = new PipelineResult()
+            var lastResult = new PipelineState()
             {
                 State = WritingState.Success,
             };
