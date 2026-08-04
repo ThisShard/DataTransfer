@@ -7,137 +7,98 @@ namespace ThisShard.Database.Core.Pipelines;
 /// <summary>
 /// Составной конвейер
 /// </summary>
-public class CompositePipeline : IPipeline<CompositePipelineState>
+public class CompositePipeline : BasePipeline<CompositePipelineState>
 {
-    private readonly TaskCompletionSource _taskCompletionSource = new();
-    private readonly CancellationTokenSource _cancellationTokenSource = new();
-    
     private readonly IPipeline<PipelineState>[] _pipelines;
     private readonly int _maxDop;
     
-    private bool _isStarted;
-    private CompositePipelineState? _previousState;
-
-    /// <summary>
-    /// Ключ
-    /// </summary>
-    public string Key { get; }
-    
-    /// <summary>
-    /// Задача завершения конвейера
-    /// </summary>
-    public Task Completion => _taskCompletionSource.Task;
-
-    /// <summary>
-    /// Состояние выполнения задач
-    /// </summary>
-    public CompositePipelineState? State { get; private set; }
-    
     public CompositePipeline(string key, IEnumerable<IPipeline<PipelineState>> pipelines, int maxDop = 1)
+        : base(key)
     {
-        Key = key;
         _pipelines = pipelines?.ToArray() ?? throw new ArgumentNullException(nameof(pipelines));
         _maxDop = maxDop;
     }
 
     /// <summary>
-    /// Инициализировать предыдущим состоянием перед началом работы
+    /// Действие при выполнении
     /// </summary>
-    public void Init(CompositePipelineState? state)
+    protected override async ValueTask OnProcess(CancellationToken ct)
     {
-        if (_isStarted)
-            throw new InvalidOperationException("Pipeline is already started");
+        if (ct.IsCancellationRequested)
+        {
+            CurrentState = CreateState(WritingState.Canceled);
+            return;
+        }
         
-        _previousState = state;
+        if (_maxDop > 1)
+            await ProcessParallel(ct);
+        else
+            await ProcessSequential(ct);
+
+        CurrentState = CreateState(ct.IsCancellationRequested
+            ? WritingState.Canceled
+            : WritingState.Success);
     }
 
     /// <summary>
-    /// Запускает конвейер
+    /// Действие при ошибке
     /// </summary>
-    public ValueTask Start()
+    protected override ValueTask OnError(Exception ex)
     {
-        if (_isStarted)
-            return ValueTask.CompletedTask;
-
-        _isStarted = true;
-
-        Work().ContinueWith(task =>
-        {
-            if (task.IsFaulted)
-                _taskCompletionSource.TrySetException(task.Exception);
-            else if (task.IsCanceled)
-                _taskCompletionSource.TrySetCanceled();
-            else
-            {
-                _taskCompletionSource.TrySetResult();
-                State = task.Result;
-            }
-        });
-
+        CurrentState = CreateState(WritingState.Error, ex);
         return ValueTask.CompletedTask;
     }
 
     /// <summary>
-    /// Работа
+    /// Параллельная обработка конвейеров
     /// </summary>
-    private async Task<CompositePipelineState> Work()
+    private async Task ProcessParallel(CancellationToken ct)
     {
-        if (_cancellationTokenSource.IsCancellationRequested)
-            return CreateState(WritingState.Canceled);
-
-        //Процесс в рамках одного пайплайна
-        async ValueTask PipelineProcess(IPipeline<PipelineState> pipeline, CancellationToken ct)
+        await Parallel.ForEachAsync(_pipelines, new ParallelOptions()
         {
-            if (ct.IsCancellationRequested)
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = _maxDop
+        }, ProcessSingle);
+    }
+
+    /// <summary>
+    /// Последовательная обработка конвейеров
+    /// </summary>
+    private async Task ProcessSequential(CancellationToken ct)
+    {
+        foreach (var pipeline in _pipelines)
+        {
+            await ProcessSingle(pipeline, ct);
+        }
+    }
+    
+    /// <summary>
+    /// Обработка одиночного конвейера
+    /// </summary>
+    private async ValueTask ProcessSingle(IPipeline<PipelineState> pipeline, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested)
+            return;
+            
+        var previousState = PreviousState?.PipelineStates.GetValueOrDefault(pipeline.Key);
+        if (previousState != null)
+        {
+            if (previousState.State == WritingState.Success)
                 return;
-            
-            var previousState = _previousState?.PipelineStates.GetValueOrDefault(pipeline.Key);
-            if (previousState != null)
-            {
-                if (previousState.State == WritingState.Success)
-                    return;
                 
-                pipeline.Init(previousState);
-            }
+            pipeline.Init(previousState);
+        }
             
-            await pipeline.Start();
-            await pipeline.Completion;
-        }
-        
-        //Параллельный процесс
-        async Task ParallelWorkProcess()
-        {
-            await Parallel.ForEachAsync(_pipelines, new ParallelOptions()
-            {
-                CancellationToken =  _cancellationTokenSource.Token,
-                MaxDegreeOfParallelism = _maxDop
-            }, PipelineProcess);
-        }
-        
-        //Непараллельный процесс
-        async ValueTask WorkProcess()
-        {
-            foreach (var pipeline in _pipelines)
-            {
-                await PipelineProcess(pipeline, _cancellationTokenSource.Token);
-            }
-        }
+        await pipeline.Start();
+        await pipeline.Completion;
+    }
 
-        try
-        {
-            if (_maxDop > 1)
-                await ParallelWorkProcess();
-            else
-                await WorkProcess();
-
-            return CreateState(_cancellationTokenSource.IsCancellationRequested
-                ? WritingState.Canceled
-                : WritingState.Success);
-        }
-        catch (Exception ex)
-        {
-            return CreateState(WritingState.Error, ex);
-        }
+    /// <summary>
+    /// Действие при диспозе
+    /// </summary>
+    protected override async ValueTask OnDispose()
+    {
+        await DisposeHelper.DisposeMany(_pipelines.Cast<IAsyncDisposable>());
     }
 
     /// <summary>
@@ -151,45 +112,5 @@ public class CompositePipeline : IPipeline<CompositePipelineState>
             Exception = exception,
             PipelineStates = _pipelines.ToDictionary(x => x.Key, x => x.State)
         };
-    }
-    
-    /// <summary>
-    /// Останавливает конвейер
-    /// </summary>
-    public async ValueTask Stop()
-    {
-        if (!_isStarted)
-            return;
-        
-        if (_taskCompletionSource.Task.IsCompleted)
-            return;
-
-        if (_cancellationTokenSource.IsCancellationRequested)
-            return;
-        
-        await _cancellationTokenSource.CancelAsync();
-    }
-
-    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>
-    /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    public async ValueTask DisposeAsync()
-    {
-        await StopAndAwaitForCompletion();
-        await DisposeHelper.DisposeMany(_pipelines.Cast<IAsyncDisposable>());
-    }
-    
-    /// <summary>
-    /// Останавливает работу и дожидается ее выполнения
-    /// </summary>
-    private async ValueTask StopAndAwaitForCompletion()
-    {
-        if (!_isStarted)
-            return;
-        
-        if (_taskCompletionSource.Task.IsCompleted)
-            return;
-
-        await Stop();
-        await Completion;
     }
 }
