@@ -1,6 +1,8 @@
 using ThisShard.Database.Core.Extensions;
 using ThisShard.Database.Core.Helpers;
 using ThisShard.Database.Core.Models.Results;
+using ThisShard.Database.Core.Models.States;
+using ThisShard.Database.Core.Readers;
 using ThisShard.Database.Core.Writers;
 
 namespace ThisShard.Database.Core.Pipelines;
@@ -80,51 +82,94 @@ public class Pipeline : IPipeline<PipelineState>
     /// </summary>
     private async Task<PipelineState> Work()
     {
-        if (_cancellationTokenSource.IsCancellationRequested)
-            return new PipelineState { State = WritingState.Canceled };
+        var currentState = new PipelineState { State = WritingState.Success };
         
-        var writers = await GetWriters();
+        //Процесс
+        async Task WorkProcess()
+        {
+            if (_cancellationTokenSource.IsCancellationRequested)
+            {
+                currentState = currentState with { State = WritingState.Canceled };
+                return;
+            }
+        
+            var writers = await GetWriters();
+            try
+            {
+                if (_cancellationTokenSource.IsCancellationRequested)
+                {
+                    currentState = currentState with { State = WritingState.Canceled };
+                    return;
+                }
+
+                foreach (var source in GetSources())
+                {
+                    if (_cancellationTokenSource.IsCancellationRequested)
+                    {
+                        currentState = currentState with { State = WritingState.Canceled };
+                        break;
+                    }
+
+                    await using var reader = await GetReader(source);
+                    var writingResult = await reader.TryWriteTo(writers, _cancellationTokenSource.Token);
+
+                    currentState = new PipelineState
+                    {
+                        LastWrittenSourceKey = source.Key, 
+                        State = writingResult.State, 
+                        LastWrittenRow = writingResult.LastWrittenRow
+                    };
+
+                    if (currentState.State != WritingState.Success)
+                        break;
+                }
+
+                if (currentState.State != WritingState.Error)
+                    await CompleteWriters(writers);
+            }
+            finally
+            {
+                await DisposeHelper.DisposeMany(writers);
+            }
+        }
+
         try
         {
-            var lastResult = new PipelineState()
-            {
-                State = WritingState.Success,
-            };
-            
-            if (_cancellationTokenSource.IsCancellationRequested)
-                return lastResult with { State = WritingState.Canceled };
-
-            foreach (var source in _sources)
-            {
-                lastResult = lastResult with { LastWrittenSource = source };
-                
-                if (_cancellationTokenSource.IsCancellationRequested)
-                    return lastResult with { State = WritingState.Canceled };
-                
-                await using var reader = await source.GetReader();
-                var writingResult = await reader.TryWriteTo(writers, _cancellationTokenSource.Token);
-                
-                lastResult = lastResult with
-                {
-                    State = writingResult.State, 
-                    LastWrittenRow = writingResult.LastWrittenRow
-                };
-                
-                if (lastResult.State != WritingState.Success)
-                    break;
-            }
-
-            if (lastResult.State != WritingState.Error)
-                await CompleteWriters(writers);
-            
-            return lastResult;
+            await WorkProcess();
+            return currentState;
         }
-        finally
+        catch (Exception ex)
         {
-            await DisposeHelper.DisposeMany(writers);
+            return currentState with
+            {
+                State = WritingState.Error, 
+                Exception = ex
+            };
         }
     }
 
+    /// <summary>
+    /// Возвращает источники с учетом предыдущего состояния
+    /// </summary>
+    private IEnumerable<IPipelineSource> GetSources()
+    {
+        if (_previousState == null || _previousState.LastWrittenSourceKey == null)
+            return _sources;
+
+        return _sources.SkipWhile(x => x.Key != _previousState.LastWrittenSourceKey);
+    }
+
+    /// <summary>
+    /// Возвращает ридер с учетом предыдущего состояния
+    /// </summary>
+    private async ValueTask<IRowReader> GetReader(IPipelineSource source)
+    {
+        if (_previousState == null || _previousState.LastWrittenSourceKey != source.Key)
+            return await source.GetReader();
+        
+        return await source.GetReader(_previousState.LastWrittenRow);
+    }
+    
     /// <summary>
     /// Возвращает писателей
     /// </summary>

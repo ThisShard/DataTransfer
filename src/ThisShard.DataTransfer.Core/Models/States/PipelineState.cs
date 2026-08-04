@@ -1,7 +1,7 @@
+using ThisShard.Database.Core.Models.Results;
 using ThisShard.Database.Core.Models.Rows;
-using ThisShard.Database.Core.Pipelines;
 
-namespace ThisShard.Database.Core.Models.Results;
+namespace ThisShard.Database.Core.Models.States;
 
 /// <summary>
 /// Результат выполнения конвейера
@@ -14,9 +14,14 @@ public record PipelineState
     public WritingState State { get; init; }
     
     /// <summary>
-    /// Последний источник из которого была произведена запись
+    /// Исключение
     /// </summary>
-    public IPipelineSource? LastWrittenSource { get; init; }
+    public Exception? Exception { get; init; }
+    
+    /// <summary>
+    /// Последний ключ источника из которого была произведена запись
+    /// </summary>
+    public string? LastWrittenSourceKey { get; init; }
     
     /// <summary>
     /// Последняя записанная строка

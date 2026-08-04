@@ -1,3 +1,4 @@
+using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Readers;
 
 namespace ThisShard.Database.Core.Pipelines;
@@ -15,5 +16,5 @@ public interface IPipelineSource : IAsyncDisposable
     /// <summary>
     /// Возвращает читателя
     /// </summary>
-    public ValueTask<IRowReader> GetReader();
+    public ValueTask<IRowReader> GetReader(IRow? lastReadRow = null);
 }
