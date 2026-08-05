@@ -1,4 +1,5 @@
 using ThisShard.Database.Core.Models.Rows;
+using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Readers;
 
 namespace ThisShard.Database.Core.Pipelines;
@@ -10,8 +11,9 @@ public class PipelineSource<TConnection> : IPipelineSource
     where TConnection : class
 {
     private readonly bool _ownsConnection;
-    private readonly Func<TConnection> _connectionFactory;
+    private readonly Func<ValueTask<TConnection>> _connectionFactory;
     private readonly Func<TConnection, IRow?, ValueTask<IRowReader>> _readerFactory;
+    private readonly Func<TConnection, ValueTask<ITable?>>? _tableGetter;
 
     private TConnection? _connection;
     
@@ -22,24 +24,38 @@ public class PipelineSource<TConnection> : IPipelineSource
 
     public PipelineSource(
         string key, 
-        Func<TConnection> connectionFactory, 
+        Func<ValueTask<TConnection>> connectionFactory, 
         Func<TConnection, IRow?, ValueTask<IRowReader>> readerFactory, 
+        Func<TConnection, ValueTask<ITable?>>? tableGetter = null, 
         bool ownsConnection = true
     )
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         _readerFactory = readerFactory ?? throw new ArgumentNullException(nameof(readerFactory));
+        _tableGetter = tableGetter;
         _ownsConnection = ownsConnection;
+    }
+
+    /// <summary>
+    /// Возвращает таблицу
+    /// </summary>
+    public async ValueTask<ITable?> GetTable()
+    {
+        if (_tableGetter == null)
+            return null;
+        
+        _connection ??= await _connectionFactory();
+        return await _tableGetter(_connection);
     }
 
     /// <summary>
     /// Возвращает читателя
     /// </summary>
-    public ValueTask<IRowReader> GetReader(IRow? lastWrittenRow = null)
+    public async ValueTask<IRowReader> GetReader(IRow? lastWrittenRow = null)
     {
-        _connection ??= _connectionFactory();
-        return _readerFactory(_connection, lastWrittenRow);
+        _connection ??= await _connectionFactory();
+        return await _readerFactory(_connection, lastWrittenRow);
     }
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>

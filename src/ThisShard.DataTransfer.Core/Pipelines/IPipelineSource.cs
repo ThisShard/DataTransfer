@@ -1,4 +1,5 @@
 using ThisShard.Database.Core.Models.Rows;
+using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Readers;
 
 namespace ThisShard.Database.Core.Pipelines;
@@ -12,6 +13,11 @@ public interface IPipelineSource : IAsyncDisposable
     /// Ключ
     /// </summary>
     public string Key { get; }
+
+    /// <summary>
+    /// Возвращает таблицу
+    /// </summary>
+    public ValueTask<ITable?> GetTable();
     
     /// <summary>
     /// Возвращает читателя

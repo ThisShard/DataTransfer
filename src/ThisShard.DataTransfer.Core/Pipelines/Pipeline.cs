@@ -34,8 +34,8 @@ public class Pipeline : BasePipeline<PipelineState>
             CurrentState = CurrentState with { State = WritingState.Canceled };
             return;
         }
-        
-        var writers = await GetWriters();
+
+        List<IRowWriter>? writers = null;
         try
         {
             if (ct.IsCancellationRequested)
@@ -53,6 +53,9 @@ public class Pipeline : BasePipeline<PipelineState>
                 }
 
                 await using var _ = source;
+                
+                writers ??= await GetWriters(source);
+                
                 await using var reader = await GetReader(source);
                 var writingResult = await reader.TryWriteTo(writers, ct);
 
@@ -67,12 +70,13 @@ public class Pipeline : BasePipeline<PipelineState>
                     break;
             }
 
-            if (CurrentState.State != WritingState.Error)
+            if (CurrentState.State != WritingState.Error && writers != null)
                 await CompleteWriters(writers);
         }
         finally
         {
-            await DisposeHelper.DisposeMany(writers);
+            if (writers != null)
+                await DisposeHelper.DisposeMany(writers);
         }
     }
 
@@ -122,14 +126,19 @@ public class Pipeline : BasePipeline<PipelineState>
     /// <summary>
     /// Возвращает писателей
     /// </summary>
-    private async ValueTask<List<IRowWriter>> GetWriters()
+    private async ValueTask<List<IRowWriter>> GetWriters(IPipelineSource source)
     {
         var writers = new List<IRowWriter>();
         
         try
         {
+            var sourceTable = await source.GetTable();
+            
             foreach (var destination in _destinations)
             {
+                if (sourceTable != null)
+                    await destination.Init(sourceTable);
+                
                 writers.Add(await destination.GetWriter());
             }
         }
