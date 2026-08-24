@@ -14,7 +14,7 @@ namespace ThisShard.Database.Infrastructure.Postgres.Pipelines.Builders;
 /// <summary>
 /// Билдер источника Postgres
 /// </summary>
-public class PgPipelineSourceBuilder : BasePipelineSourceBuilder
+public class PgPipelineSourceBuilder : IPipelineSourceBuilder
 {
     private string[]? _tablePath;
     private PgTable? _table;
@@ -23,6 +23,16 @@ public class PgPipelineSourceBuilder : BasePipelineSourceBuilder
     private Func<ValueTask<NpgsqlConnection>>? _connectionFactory;
     private Func<NpgsqlConnection, NpgsqlCommand>? _commandFactory;
     private bool _ownsConnection;
+    private string _key = string.Empty;
+    
+    /// <summary>
+    /// Указать ключ для источника
+    /// </summary>
+    public IPipelineSourceBuilder WithKey(string key)
+    {
+        _key = key;
+        return this;
+    }
 
     /// <summary>
     /// Указать путь к таблице
@@ -82,7 +92,7 @@ public class PgPipelineSourceBuilder : BasePipelineSourceBuilder
     /// <summary>
     /// Билдит источник
     /// </summary>
-    public override IPipelineSource Build()
+    public IPipelineSource Build()
     {
         var connectionFactory = _connectionFactory;
         if (connectionFactory == null)
@@ -95,7 +105,7 @@ public class PgPipelineSourceBuilder : BasePipelineSourceBuilder
         var tableGetter = BuildTableGetter();
 
         return new PipelineSource<NpgsqlConnection>(
-            Key,
+            _key,
             async () =>
             {
                 var connection = await connectionFactory();

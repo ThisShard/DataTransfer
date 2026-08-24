@@ -12,7 +12,7 @@ namespace ThisShard.Database.Infrastructure.Postgres.Pipelines.Builders;
 /// <summary>
 /// Билдер назначения Postgres
 /// </summary>
-public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
+public class PgPipelineDestinationBuilder : IPipelineDestinationBuilder
 {
     private string[]? _tablePath;
     private PgStagingTable? _stagingTable;
@@ -21,6 +21,16 @@ public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
     private Func<ValueTask<NpgsqlConnection>>? _connectionFactory;
     private bool _ownsConnection;
     private bool _useBulkWriter = true;
+    private string _key = string.Empty;
+    
+    /// <summary>
+    /// Указать ключ для назначения
+    /// </summary>
+    public IPipelineDestinationBuilder WithKey(string key)
+    {
+        _key = key;
+        return this;
+    }
     
     /// <summary>
     /// Указать путь к таблице
@@ -80,7 +90,7 @@ public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
     /// <summary>
     /// Билдит назначение
     /// </summary>
-    public override IPipelineDestination Build()
+    public IPipelineDestination Build()
     {
         var connectionFactory = _connectionFactory;
         if (connectionFactory == null)
@@ -91,7 +101,7 @@ public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
             throw new InvalidOperationException("Either table path or table or staging table must be set");
 
         return new PipelineDestination<NpgsqlConnection>(
-            Key,
+            _key,
             async () =>
             {
                 var connection = await connectionFactory();

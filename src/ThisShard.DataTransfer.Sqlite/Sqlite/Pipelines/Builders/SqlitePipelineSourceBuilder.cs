@@ -14,7 +14,7 @@ namespace ThisShard.Database.Infrastructure.Sqlite.Pipelines.Builders;
 /// <summary>
 /// Билдер источника Sqlite
 /// </summary>
-public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
+public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
 {
     private string? _tableName;
     private SqliteTable? _table;
@@ -23,6 +23,16 @@ public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private Func<SqliteConnection, SqliteCommand>? _commandFactory;
     private bool _ownsConnection;
+    private string _key = string.Empty;
+    
+    /// <summary>
+    /// Указать ключ для источника
+    /// </summary>
+    public IPipelineSourceBuilder WithKey(string key)
+    {
+        _key = key;
+        return this;
+    }
 
     /// <summary>
     /// Указать имя таблицы
@@ -82,7 +92,7 @@ public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
     /// <summary>
     /// Билдит источник
     /// </summary>
-    public override IPipelineSource Build()
+    public IPipelineSource Build()
     {
         var connectionFactory = _connectionFactory;
         if (connectionFactory == null)
@@ -95,7 +105,7 @@ public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
         var tableGetter = BuildTableGetter();
 
         return new PipelineSource<SqliteConnection>(
-            Key,
+            _key,
             async () =>
             {
                 var connection = await connectionFactory();

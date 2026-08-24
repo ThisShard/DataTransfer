@@ -13,7 +13,7 @@ namespace ThisShard.Database.Infrastructure.Sqlite.Pipelines.Builders;
 /// <summary>
 /// Билдер назначения Sqlite
 /// </summary>
-public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
+public class SqlitePipelineDestinationBuilder : IPipelineDestinationBuilder
 {
     private string? _tableName;
     private SqliteTable? _table;
@@ -21,6 +21,16 @@ public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private bool _ownsConnection;
     private bool _createTableIfNotExists = true;
+    private string _key = string.Empty;
+    
+    /// <summary>
+    /// Указать ключ для источника
+    /// </summary>
+    public IPipelineDestinationBuilder WithKey(string key)
+    {
+        _key = key;
+        return this;
+    }
     
     /// <summary>
     /// Указать имя таблицы
@@ -71,7 +81,7 @@ public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
     /// <summary>
     /// Билдит назначение
     /// </summary>
-    public override IPipelineDestination Build()
+    public IPipelineDestination Build()
     {
         var connectionFactory = _connectionFactory;
         if (connectionFactory == null)
@@ -84,7 +94,7 @@ public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
         var initFunc = BuildInitFunc();
 
         return new PipelineDestination<SqliteConnection>(
-            Key,
+            _key,
             async () =>
             {
                 var connection = await connectionFactory();
