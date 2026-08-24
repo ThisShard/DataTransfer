@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using ThisShard.Database.Core.Extensions;
 using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Pipelines;
@@ -11,7 +12,7 @@ using ThisShard.Database.Infrastructure.Sqlite.Options;
 namespace ThisShard.Database.Infrastructure.Sqlite.Pipelines.Builders;
 
 /// <summary>
-/// Билдер источника Postgres
+/// Билдер источника Sqlite
 /// </summary>
 public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
 {
@@ -83,7 +84,8 @@ public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
     /// </summary>
     public override IPipelineSource Build()
     {
-        if (_connectionFactory == null)
+        var connectionFactory = _connectionFactory;
+        if (connectionFactory == null)
             throw new InvalidOperationException("Connection factory must be set");
 
         var readerFactory = BuildReaderFactory();
@@ -94,7 +96,15 @@ public class SqlitePipelineSourceBuilder : BasePipelineSourceBuilder
 
         return new PipelineSource<SqliteConnection>(
             Key,
-            _connectionFactory,
+            async () =>
+            {
+                var connection = await connectionFactory();
+                
+                if (_ownsConnection && !connection.IsOpen())
+                    await connection.OpenAsync();
+                
+                return connection;
+            },
             readerFactory,
             tableGetter,
             _ownsConnection

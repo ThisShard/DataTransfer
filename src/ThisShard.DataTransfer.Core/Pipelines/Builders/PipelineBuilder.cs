@@ -1,3 +1,5 @@
+using ThisShard.Database.Core.Models.States;
+
 namespace ThisShard.Database.Core.Pipelines.Builders;
 
 /// <summary>
@@ -41,7 +43,7 @@ public class PipelineBuilder : IPipelineBuilder
     /// <summary>
     /// Билдит пайплайн
     /// </summary>
-    public IPipeline Build()
+    public IPipeline<PipelineState> Build()
     {
         var sources = _sourceBuilders.Select(x => x.Build()).ToArray();
         var destinations = _destinationBuilders.Select(x => x.Build()).ToArray();

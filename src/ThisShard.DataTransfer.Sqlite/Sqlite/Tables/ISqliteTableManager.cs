@@ -28,5 +28,5 @@ public interface ISqliteTableManager
     /// <summary>
     /// Конвертирует таблицу в Sqlite
     /// </summary>
-    SqliteTable ConvertTable(ITable table);
+    SqliteTable ConvertTable(ITable table, string? name = null);
 }

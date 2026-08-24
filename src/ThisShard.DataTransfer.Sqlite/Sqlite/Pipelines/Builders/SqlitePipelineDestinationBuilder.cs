@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using ThisShard.Database.Core.Extensions;
+using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
 using ThisShard.Database.Core.Writers;
@@ -9,7 +11,7 @@ using ThisShard.Database.Infrastructure.Sqlite.Options;
 namespace ThisShard.Database.Infrastructure.Sqlite.Pipelines.Builders;
 
 /// <summary>
-/// Билдер назначения Postgres
+/// Билдер назначения Sqlite
 /// </summary>
 public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
 {
@@ -18,6 +20,7 @@ public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
     private SqliteBulkOperationsOptions? _options;
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private bool _ownsConnection;
+    private bool _createTableIfNotExists = true;
     
     /// <summary>
     /// Указать имя таблицы
@@ -55,26 +58,60 @@ public class SqlitePipelineDestinationBuilder : BasePipelineDestinationBuilder
         _ownsConnection = ownsConnection;
         return this;
     }
+    
+    /// <summary>
+    /// Указать признак создания таблиц
+    /// </summary>
+    public SqlitePipelineDestinationBuilder CreateTableIfNotExists(bool value = true)
+    {
+        _createTableIfNotExists = value;
+        return this;
+    }
 
     /// <summary>
     /// Билдит назначение
     /// </summary>
     public override IPipelineDestination Build()
     {
-        if (_connectionFactory == null)
+        var connectionFactory = _connectionFactory;
+        if (connectionFactory == null)
             throw new InvalidOperationException("Connection factory must be set");
 
         var writerFactory = BuildWriterFactory();
         if (writerFactory == null)
             throw new InvalidOperationException("Either table path or table must be set");
+        
+        var initFunc = BuildInitFunc();
 
         return new PipelineDestination<SqliteConnection>(
             Key,
-            _connectionFactory,
+            async () =>
+            {
+                var connection = await connectionFactory();
+                
+                if (_ownsConnection && !connection.IsOpen())
+                    await connection.OpenAsync();
+                
+                return connection;
+            },
             writerFactory,
-            null,
+            initFunc,
             _ownsConnection
         );
+    }
+
+    /// <summary>
+    /// Билдит функцию инициализации
+    /// </summary>
+    private Func<SqliteConnection, ITable, ValueTask>? BuildInitFunc()
+    {
+        var tableName = _tableName;
+        var options = _options;
+
+        if (tableName != null && _createTableIfNotExists)
+            return async (cn, table) => await cn.CreateTable(table, tableName, options);
+
+        return null;
     }
 
     /// <summary>

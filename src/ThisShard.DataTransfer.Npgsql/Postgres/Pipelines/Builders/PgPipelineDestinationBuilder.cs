@@ -1,4 +1,5 @@
 using Npgsql;
+using ThisShard.Database.Core.Extensions;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
 using ThisShard.Database.Core.Writers;
@@ -81,7 +82,8 @@ public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
     /// </summary>
     public override IPipelineDestination Build()
     {
-        if (_connectionFactory == null)
+        var connectionFactory = _connectionFactory;
+        if (connectionFactory == null)
             throw new InvalidOperationException("Connection factory must be set");
 
         var writerFactory = BuildWriterFactory();
@@ -90,7 +92,15 @@ public class PgPipelineDestinationBuilder : BasePipelineDestinationBuilder
 
         return new PipelineDestination<NpgsqlConnection>(
             Key,
-            _connectionFactory,
+            async () =>
+            {
+                var connection = await connectionFactory();
+                
+                if (_ownsConnection && !connection.IsOpen())
+                    await connection.OpenAsync();
+                
+                return connection;
+            },
             writerFactory,
             null,
             _ownsConnection

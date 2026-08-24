@@ -103,6 +103,13 @@ public static class SqliteBulkOperationsExtensions
     public static async ValueTask<ITableWriter> CreateTableAndGetWriter(this SqliteConnection connection, ITable table, SqliteBulkOperationsOptions? options = null) => 
         await GetWriter(connection, await connection.CreateTable(table, options), options);
 
+    
+    /// <summary>
+    /// Создает таблицу и возвращает писателя для Batch операций
+    /// </summary>
+    public static async ValueTask<ITableWriter> CreateTableAndGetWriter(this SqliteConnection connection, ITable table, string name, SqliteBulkOperationsOptions? options = null) => 
+        await GetWriter(connection, await connection.CreateTable(table, name, options), options);
+
     #endregion
     
     #region GetSustainableRowReader
@@ -227,6 +234,20 @@ public static class SqliteBulkOperationsExtensions
         options ??= SqliteBulkOperationsOptions.Default;
 
         var convertedTable = options.TableManager.ConvertTable(table);
+        
+        await options.TableManager.CreateTable(connection, convertedTable);
+        
+        return convertedTable;
+    }
+    
+    /// <summary>
+    /// Создает таблицу с модификацией
+    /// </summary>
+    public static async Task<SqliteTable> CreateTable(this SqliteConnection connection, ITable table, string name, SqliteBulkOperationsOptions? options = null)
+    {
+        options ??= SqliteBulkOperationsOptions.Default;
+
+        var convertedTable = options.TableManager.ConvertTable(table, name);
         
         await options.TableManager.CreateTable(connection, convertedTable);
         

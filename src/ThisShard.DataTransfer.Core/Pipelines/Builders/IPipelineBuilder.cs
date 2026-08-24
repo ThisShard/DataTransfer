@@ -1,3 +1,5 @@
+using ThisShard.Database.Core.Models.States;
+
 namespace ThisShard.Database.Core.Pipelines.Builders;
 
 /// <summary>
@@ -23,5 +25,5 @@ public interface IPipelineBuilder
     /// <summary>
     /// Билдит пайплайн
     /// </summary>
-    IPipeline Build();
+    IPipeline<PipelineState> Build();
 }
