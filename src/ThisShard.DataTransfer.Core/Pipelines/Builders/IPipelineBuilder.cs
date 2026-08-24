@@ -6,12 +6,22 @@ namespace ThisShard.Database.Core.Pipelines.Builders;
 public interface IPipelineBuilder
 {
     /// <summary>
+    /// Указать ключ для пайплайна
+    /// </summary>
+    IPipelineBuilder WithKey(string key);
+    
+    /// <summary>
     /// Добавляет источник
     /// </summary>
-    public IPipelineBuilder AddSource(IPipelineSourceBuilder sourceBuilder);
+    IPipelineBuilder AddSource(IPipelineSourceBuilder source);
     
     /// <summary>
     /// Добавляет назначение
     /// </summary>
-    public IPipelineBuilder AddDestination(IPipelineDestinationBuilder destinationBuilder);
+    IPipelineBuilder AddDestination(IPipelineDestinationBuilder destination);
+    
+    /// <summary>
+    /// Билдит пайплайн
+    /// </summary>
+    IPipeline Build();
 }
