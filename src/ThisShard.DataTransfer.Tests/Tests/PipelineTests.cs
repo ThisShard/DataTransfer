@@ -18,8 +18,8 @@ public class PipelineTests
     private const string RestoreConnectionString =
         "Host=localhost;port=5432;Database=kdbtest;Username=postgres;Password=postgres;Include Error Detail=true;";
     private const string SqliteConnectionString =
-        "Data Source=/Users/shard/Documents/dump.db";
-        //"Data Source=:memory:";
+        //"Data Source=/Users/shard/Documents/dump.db";
+        "Data Source=:memory:";
     
     private static readonly string[] TablesToDump =
     [
@@ -101,15 +101,15 @@ public class PipelineTests
             builder.AddPipeline(p => p
                 .WithKey(tableName)
                 .AddNpgsqlSource(c => c
+                    .WithKey(tableName)
                     .WithTable([tableName])
                     .WithConnectionFactory(() => ValueTask.FromResult(GetPostgresConnection(DumpConnectionString)))
-                    .WithKey(tableName)
                 )
                 .AddSqliteDestination(c => c
+                    .WithKey(tableName)
                     .WithTable(tableName)
                     .WithConnectionFactory(() => ValueTask.FromResult(dumpConnection), false)
                     .CreateTableIfNotExists()
-                    .WithKey(tableName)
                 )
             );
         }
@@ -129,14 +129,14 @@ public class PipelineTests
             builder.AddPipeline(p => p
                 .WithKey(tableName)
                 .AddNpgsqlDestination(c => c
+                    .WithKey(tableName)
                     .WithTable([tableName])
                     .WithConnectionFactory(() => ValueTask.FromResult(GetPostgresConnection(RestoreConnectionString)))
-                    .WithKey(tableName)
                 )
                 .AddSqliteSource(c => c
+                    .WithKey(tableName)
                     .WithTable(tableName)
                     .WithConnectionFactory(() => ValueTask.FromResult(dumpConnection), false)
-                    .WithKey(tableName)
                 )
             );
         }

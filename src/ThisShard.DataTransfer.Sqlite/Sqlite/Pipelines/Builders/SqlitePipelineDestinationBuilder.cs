@@ -31,7 +31,12 @@ public class SqlitePipelineDestinationBuilder : IPipelineDestinationBuilder
     /// <summary>
     /// Указать ключ для назначения
     /// </summary>
-    public IPipelineDestinationBuilder WithKey(string key)
+    IPipelineDestinationBuilder IPipelineDestinationBuilder.WithKey(string key) => WithKey(key);
+    
+    /// <summary>
+    /// Указать ключ для назначения
+    /// </summary>
+    public SqlitePipelineDestinationBuilder WithKey(string key)
     {
         Key = key;
         return this;

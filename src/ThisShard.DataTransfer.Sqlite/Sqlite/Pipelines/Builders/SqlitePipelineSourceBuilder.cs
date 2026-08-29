@@ -31,9 +31,14 @@ public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
     public string Key { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Указать ключ для назначения
+    /// Указать ключ для источника
     /// </summary>
-    public IPipelineSourceBuilder WithKey(string key)
+    IPipelineSourceBuilder IPipelineSourceBuilder.WithKey(string key) => WithKey(key);
+
+    /// <summary>
+    /// Указать ключ для источника
+    /// </summary>
+    public SqlitePipelineSourceBuilder WithKey(string key)
     {
         Key = key;
         return this;
