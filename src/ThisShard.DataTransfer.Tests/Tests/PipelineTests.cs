@@ -108,7 +108,7 @@ public class PipelineTests
                 .AddSqliteDestination(c => c
                     .WithKey(tableName)
                     .WithTable(tableName)
-                    .WithConnectionFactory(() => ValueTask.FromResult(dumpConnection), false)
+                    .WithConnection(dumpConnection)
                     .CreateTableIfNotExists()
                 )
             );
@@ -136,7 +136,7 @@ public class PipelineTests
                 .AddSqliteSource(c => c
                     .WithKey(tableName)
                     .WithTable(tableName)
-                    .WithConnectionFactory(() => ValueTask.FromResult(dumpConnection), false)
+                    .WithConnection(dumpConnection)
                 )
             );
         }

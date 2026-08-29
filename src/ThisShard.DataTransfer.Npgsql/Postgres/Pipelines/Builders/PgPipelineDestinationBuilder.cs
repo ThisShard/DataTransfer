@@ -79,6 +79,16 @@ public class PgPipelineDestinationBuilder : IPipelineDestinationBuilder
     }
 
     /// <summary>
+    /// Указать соединение
+    /// </summary>
+    public PgPipelineDestinationBuilder WithConnection(NpgsqlConnection connection, bool ownsConnection = false)
+    {
+        _connectionFactory = () => new ValueTask<NpgsqlConnection>(connection);
+        _ownsConnection = ownsConnection;
+        return this;
+    }
+
+    /// <summary>
     /// Указать фабрику соединений
     /// </summary>
     public PgPipelineDestinationBuilder WithConnectionFactory(Func<ValueTask<NpgsqlConnection>> factory, bool ownsConnection = true)

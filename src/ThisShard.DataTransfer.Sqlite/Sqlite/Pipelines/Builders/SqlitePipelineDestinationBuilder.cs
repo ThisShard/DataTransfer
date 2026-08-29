@@ -70,6 +70,16 @@ public class SqlitePipelineDestinationBuilder : IPipelineDestinationBuilder
     }
 
     /// <summary>
+    /// Указать соединение
+    /// </summary>
+    public SqlitePipelineDestinationBuilder WithConnection(SqliteConnection connection, bool ownsConnection = false)
+    {
+        _connectionFactory = () => new ValueTask<SqliteConnection>(connection);
+        _ownsConnection = ownsConnection;
+        return this;
+    }
+
+    /// <summary>
     /// Указать фабрику соединений
     /// </summary>
     public SqlitePipelineDestinationBuilder WithConnectionFactory(Func<ValueTask<SqliteConnection>> factory, bool ownsConnection = true)

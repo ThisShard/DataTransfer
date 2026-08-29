@@ -81,6 +81,16 @@ public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
     }
 
     /// <summary>
+    /// Указать соединение
+    /// </summary>
+    public SqlitePipelineSourceBuilder WithConnection(SqliteConnection connection, bool ownsConnection = false)
+    {
+        _connectionFactory = () => new ValueTask<SqliteConnection>(connection);
+        _ownsConnection = ownsConnection;
+        return this;
+    }
+
+    /// <summary>
     /// Указать фабрику соединений
     /// </summary>
     public SqlitePipelineSourceBuilder WithConnectionFactory(Func<ValueTask<SqliteConnection>> factory, bool ownsConnection = true)
