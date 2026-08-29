@@ -16,6 +16,11 @@ public interface IRow
     bool TryGetValue(string columnKey, out object? value);
     
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    IEnumerable<string> GetKeys();
+    
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     IDictionary<string, object?> Metadata { get; }

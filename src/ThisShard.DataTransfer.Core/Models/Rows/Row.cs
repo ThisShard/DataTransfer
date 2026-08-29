@@ -18,6 +18,11 @@ public class Row : IRow
     public required IReadOnlyDictionary<string, object?> Data { get; set; }
 
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => Data.Keys;
+
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;

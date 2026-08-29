@@ -4,6 +4,7 @@ using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
+using ThisShard.Database.Core.Pipelines.Sources;
 using ThisShard.Database.Core.Readers;
 using ThisShard.Database.Infrastructure.Extensions;
 using ThisShard.Database.Infrastructure.Sqlite.Models;
@@ -23,14 +24,18 @@ public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private Func<SqliteConnection, SqliteCommand>? _commandFactory;
     private bool _ownsConnection;
-    private string _key = string.Empty;
-    
+
     /// <summary>
-    /// Указать ключ для источника
+    /// Ключ
+    /// </summary>
+    public string Key { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Указать ключ для назначения
     /// </summary>
     public IPipelineSourceBuilder WithKey(string key)
     {
-        _key = key;
+        Key = key;
         return this;
     }
 
@@ -104,17 +109,9 @@ public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
 
         var tableGetter = BuildTableGetter();
 
-        return new PipelineSource<SqliteConnection>(
-            _key,
-            async () =>
-            {
-                var connection = await connectionFactory();
-                
-                if (_ownsConnection && !connection.IsOpen())
-                    await connection.OpenAsync();
-                
-                return connection;
-            },
+        return new DbPipelineSource<SqliteConnection>(
+            Key,
+            connectionFactory,
             readerFactory,
             tableGetter,
             _ownsConnection

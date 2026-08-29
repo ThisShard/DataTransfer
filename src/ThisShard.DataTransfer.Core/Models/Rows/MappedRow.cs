@@ -16,6 +16,11 @@ public class MappedRow : IRow
     public RowState State => _mapper.GetRowState(_row);
 
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => _row.GetKeys();
+
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     public IDictionary<string, object?> Metadata => _row.Metadata;

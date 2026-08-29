@@ -43,6 +43,11 @@ public class ObjectRowAdapter<T> : IRow
     public T? Object { get; set; }
 
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => PropertyAccessors.Keys;
+
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;

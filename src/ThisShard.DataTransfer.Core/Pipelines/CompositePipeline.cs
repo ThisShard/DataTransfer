@@ -106,11 +106,37 @@ public class CompositePipeline : BasePipeline<CompositePipelineState>
     /// </summary>
     private CompositePipelineState CreateState(WritingState state, Exception? exception = null)
     {
+        var aggregateException = GetAggregateException(exception);
+
         return new CompositePipelineState
         {
-            State = state,
-            Exception = exception,
+            State = _pipelines.Any(x => x.State?.State == WritingState.Error) 
+                ? WritingState.Error 
+                : state,
+            Exception = aggregateException,
             PipelineStates = _pipelines.ToDictionary(x => x.Key, x => x.State)
         };
+    }
+
+    /// <summary>
+    /// Формирует агрегированное исключение
+    /// </summary>
+    private Exception? GetAggregateException(Exception? exception)
+    {
+        var errorPipelines = _pipelines
+            .Where(x => x.State?.State == WritingState.Error);
+        
+        var exceptions = errorPipelines
+            .Select(x => x.State!.Exception)
+            .Concat([exception])
+            .Where(x => x != null)
+            .ToList();
+        
+        if (exceptions.Count > 1)
+            exception = new AggregateException(exceptions!);
+        else
+            exception = exceptions.FirstOrDefault();
+        
+        return exception;
     }
 }

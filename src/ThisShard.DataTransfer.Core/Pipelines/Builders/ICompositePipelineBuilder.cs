@@ -8,6 +8,11 @@ namespace ThisShard.Database.Core.Pipelines.Builders;
 public interface ICompositePipelineBuilder
 {
     /// <summary>
+    /// Ключ
+    /// </summary>
+    string Key { get; }
+    
+    /// <summary>
     /// Указать ключ для пайплайна
     /// </summary>
     ICompositePipelineBuilder WithKey(string key);

@@ -13,6 +13,11 @@ public class StateRowWrapper : IRow
     public RowState State { get; set; }
 
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => _row.GetKeys();
+
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     public IDictionary<string, object?> Metadata => _row.Metadata;

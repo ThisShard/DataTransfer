@@ -8,15 +8,29 @@ namespace ThisShard.Database.Core.Pipelines.Builders;
 public class CompositePipelineBuilder : ICompositePipelineBuilder
 {
     private readonly List<IPipelineBuilder> _builders = new();
-    
-    private string _key = string.Empty;
+    private int _nextDefaultKeyIndex = 0;
+    private int _maxDop = 1;
+
+    /// <summary>
+    /// Ключ
+    /// </summary>
+    public string Key { get; private set; } = string.Empty;
 
     /// <summary>
     /// Указать ключ для пайплайна
     /// </summary>
     public ICompositePipelineBuilder WithKey(string key)
     {
-        _key = key;
+        Key = key;
+        return this;
+    }
+
+    /// <summary>
+    /// С максимальным паралеллизмом
+    /// </summary>
+    public ICompositePipelineBuilder WithMaxDop(int maxDop)
+    {
+        _maxDop = maxDop;
         return this;
     }
     
@@ -25,6 +39,9 @@ public class CompositePipelineBuilder : ICompositePipelineBuilder
     /// </summary>
     public ICompositePipelineBuilder AddPipeline(IPipelineBuilder pipeline)
     {
+        if (string.IsNullOrEmpty(pipeline.Key))
+            pipeline.WithKey($"Pipeline_{_nextDefaultKeyIndex++}");
+        
         _builders.Add(pipeline);
         return this;
     }
@@ -34,6 +51,6 @@ public class CompositePipelineBuilder : ICompositePipelineBuilder
     /// </summary>
     public IPipeline<CompositePipelineState> Build()
     {
-        return new CompositePipeline(_key, _builders.Select(x=>x.Build()));
+        return new CompositePipeline(Key, _builders.Select(x=>x.Build()), _maxDop);
     }
 }

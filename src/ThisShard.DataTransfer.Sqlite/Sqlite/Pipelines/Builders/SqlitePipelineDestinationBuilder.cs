@@ -3,6 +3,7 @@ using ThisShard.Database.Core.Extensions;
 using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
+using ThisShard.Database.Core.Pipelines.Destinations;
 using ThisShard.Database.Core.Writers;
 using ThisShard.Database.Infrastructure.Extensions;
 using ThisShard.Database.Infrastructure.Sqlite.Models;
@@ -21,14 +22,18 @@ public class SqlitePipelineDestinationBuilder : IPipelineDestinationBuilder
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private bool _ownsConnection;
     private bool _createTableIfNotExists = true;
-    private string _key = string.Empty;
-    
+
     /// <summary>
-    /// Указать ключ для источника
+    /// Ключ
+    /// </summary>
+    public string Key { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Указать ключ для назначения
     /// </summary>
     public IPipelineDestinationBuilder WithKey(string key)
     {
-        _key = key;
+        Key = key;
         return this;
     }
     
@@ -93,17 +98,9 @@ public class SqlitePipelineDestinationBuilder : IPipelineDestinationBuilder
         
         var initFunc = BuildInitFunc();
 
-        return new PipelineDestination<SqliteConnection>(
-            _key,
-            async () =>
-            {
-                var connection = await connectionFactory();
-                
-                if (_ownsConnection && !connection.IsOpen())
-                    await connection.OpenAsync();
-                
-                return connection;
-            },
+        return new DbPipelineDestination<SqliteConnection>(
+            Key,
+            connectionFactory,
             writerFactory,
             initFunc,
             _ownsConnection

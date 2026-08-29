@@ -2,6 +2,7 @@ using Npgsql;
 using ThisShard.Database.Core.Extensions;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
+using ThisShard.Database.Core.Pipelines.Destinations;
 using ThisShard.Database.Core.Writers;
 using ThisShard.Database.Infrastructure.Extensions;
 using ThisShard.Database.Infrastructure.Postgres.Models;
@@ -21,14 +22,18 @@ public class PgPipelineDestinationBuilder : IPipelineDestinationBuilder
     private Func<ValueTask<NpgsqlConnection>>? _connectionFactory;
     private bool _ownsConnection;
     private bool _useBulkWriter = true;
-    private string _key = string.Empty;
-    
+
+    /// <summary>
+    /// Ключ
+    /// </summary>
+    public string Key { get; private set; } = string.Empty;
+
     /// <summary>
     /// Указать ключ для назначения
     /// </summary>
     public IPipelineDestinationBuilder WithKey(string key)
     {
-        _key = key;
+        Key = key;
         return this;
     }
     
@@ -100,17 +105,9 @@ public class PgPipelineDestinationBuilder : IPipelineDestinationBuilder
         if (writerFactory == null)
             throw new InvalidOperationException("Either table path or table or staging table must be set");
 
-        return new PipelineDestination<NpgsqlConnection>(
-            _key,
-            async () =>
-            {
-                var connection = await connectionFactory();
-                
-                if (_ownsConnection && !connection.IsOpen())
-                    await connection.OpenAsync();
-                
-                return connection;
-            },
+        return new DbPipelineDestination<NpgsqlConnection>(
+            Key,
+            connectionFactory,
             writerFactory,
             null,
             _ownsConnection

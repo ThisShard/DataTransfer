@@ -2,7 +2,7 @@ using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Readers;
 
-namespace ThisShard.Database.Core.Pipelines;
+namespace ThisShard.Database.Core.Pipelines.Sources;
 
 /// <summary>
 /// Источник данных для конвейера

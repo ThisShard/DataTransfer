@@ -4,6 +4,7 @@ using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Core.Pipelines;
 using ThisShard.Database.Core.Pipelines.Builders;
+using ThisShard.Database.Core.Pipelines.Sources;
 using ThisShard.Database.Core.Readers;
 using ThisShard.Database.Infrastructure.Extensions;
 using ThisShard.Database.Infrastructure.Postgres.Models;
@@ -23,14 +24,18 @@ public class PgPipelineSourceBuilder : IPipelineSourceBuilder
     private Func<ValueTask<NpgsqlConnection>>? _connectionFactory;
     private Func<NpgsqlConnection, NpgsqlCommand>? _commandFactory;
     private bool _ownsConnection;
-    private string _key = string.Empty;
-    
+
     /// <summary>
-    /// Указать ключ для источника
+    /// Ключ
+    /// </summary>
+    public string Key { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Указать ключ для назначения
     /// </summary>
     public IPipelineSourceBuilder WithKey(string key)
     {
-        _key = key;
+        Key = key;
         return this;
     }
 
@@ -104,17 +109,9 @@ public class PgPipelineSourceBuilder : IPipelineSourceBuilder
 
         var tableGetter = BuildTableGetter();
 
-        return new PipelineSource<NpgsqlConnection>(
-            _key,
-            async () =>
-            {
-                var connection = await connectionFactory();
-                
-                if (_ownsConnection && !connection.IsOpen())
-                    await connection.OpenAsync();
-                
-                return connection;
-            },
+        return new DbPipelineSource<NpgsqlConnection>(
+            Key,
+            connectionFactory,
             readerFactory,
             tableGetter,
             _ownsConnection

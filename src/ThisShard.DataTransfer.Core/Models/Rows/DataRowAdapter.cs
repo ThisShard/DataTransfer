@@ -21,6 +21,11 @@ public class DataRowAdapter : IRow
     public DataRow Row { get; }
 
     /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => Row.Table.Columns.OfType<DataColumn>().Select(c => c.ColumnName);
+
+    /// <summary>
     /// Метаданные строки
     /// </summary>
     public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;
