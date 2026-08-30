@@ -103,6 +103,13 @@ public static class SqliteBulkOperationsExtensions
     public static async ValueTask<ITableWriter> CreateTableAndGetWriter(this SqliteConnection connection, ITable table, SqliteBulkOperationsOptions? options = null) => 
         await GetWriter(connection, await connection.CreateTable(table, options), options);
 
+    
+    /// <summary>
+    /// Создает таблицу и возвращает писателя для Batch операций
+    /// </summary>
+    public static async ValueTask<ITableWriter> CreateTableAndGetWriter(this SqliteConnection connection, ITable table, string name, SqliteBulkOperationsOptions? options = null) => 
+        await GetWriter(connection, await connection.CreateTable(table, name, options), options);
+
     #endregion
     
     #region GetSustainableRowReader
@@ -114,13 +121,14 @@ public static class SqliteBulkOperationsExtensions
         string tableName,
         RowState rowState = RowState.Added,
         SqliteBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var table = await connection.GetTableInfo(tableName, options);
         if (table == null)
             throw new InvalidOperationException("Table not exists");
         
-        return connection.GetSustainableRowReader(table, rowState, options, ownsConnection);
+        return connection.GetSustainableRowReader(table, rowState, options, ownsConnection, startRow);
     }
     
     /// <summary>
@@ -131,13 +139,14 @@ public static class SqliteBulkOperationsExtensions
         Func<SqliteConnection, SqliteCommand> commandFactory,
         RowState rowState = RowState.Added,
         SqliteBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var table = await connection.GetTableInfo(tableName, options);
         if (table == null)
             throw new InvalidOperationException("Table not exists");
         
-        return connection.GetSustainableRowReader(table, commandFactory, rowState, options, ownsConnection);
+        return connection.GetSustainableRowReader(table, commandFactory, rowState, options, ownsConnection, startRow);
     }
     
     /// <summary>
@@ -147,12 +156,13 @@ public static class SqliteBulkOperationsExtensions
         SqliteTable table,
         RowState rowState = RowState.Added,
         SqliteBulkOperationsOptions? options = null,
-        bool ownsConnection = false) => connection.GetSustainableRowReader(table, cn =>
+        bool ownsConnection = false,
+        IRow? startRow = null) => connection.GetSustainableRowReader(table, cn =>
     {
         var command = cn.CreateCommand();
         command.CommandText = $"SELECT * FROM {table.Path}";
         return command;
-    }, rowState, options, ownsConnection);
+    }, rowState, options, ownsConnection, startRow);
     
     /// <summary>
     /// Возвращает читателя
@@ -162,7 +172,8 @@ public static class SqliteBulkOperationsExtensions
         Func<SqliteConnection, SqliteCommand> commandFactory,
         RowState rowState = RowState.Added,
         SqliteBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var primaryKey = table.Columns
             .Where(x => x.IsPrimaryKey)
@@ -175,7 +186,7 @@ public static class SqliteBulkOperationsExtensions
         return connection.GetSustainableRowReader(async (cn, row, writer, ct) =>
         {
             await using var command = commandFactory(cn);
-            AdjustCommand(command, row, primaryKey);
+            AdjustCommand(command, row ?? startRow, primaryKey);
             await using var reader = await command.ExecuteReaderAsync(ct).GetRowReader(rowState);
             await reader.WriteTo(writer, ct);
         }, options.SustainableOptions ?? SustainableOperationsOptions<SqliteConnection>.Disabled, ownsConnection);
@@ -223,6 +234,20 @@ public static class SqliteBulkOperationsExtensions
         options ??= SqliteBulkOperationsOptions.Default;
 
         var convertedTable = options.TableManager.ConvertTable(table);
+        
+        await options.TableManager.CreateTable(connection, convertedTable);
+        
+        return convertedTable;
+    }
+    
+    /// <summary>
+    /// Создает таблицу с модификацией
+    /// </summary>
+    public static async Task<SqliteTable> CreateTable(this SqliteConnection connection, ITable table, string name, SqliteBulkOperationsOptions? options = null)
+    {
+        options ??= SqliteBulkOperationsOptions.Default;
+
+        var convertedTable = options.TableManager.ConvertTable(table, name);
         
         await options.TableManager.CreateTable(connection, convertedTable);
         

@@ -5,6 +5,8 @@ namespace ThisShard.Database.Core.Models.Rows;
 /// </summary>
 public class Row : IRow
 {
+    private IDictionary<string, object?>? _metadata;
+
     /// <summary>
     /// Состояние
     /// </summary>
@@ -14,6 +16,16 @@ public class Row : IRow
     /// Данные по ключу
     /// </summary>
     public required IReadOnlyDictionary<string, object?> Data { get; set; }
+
+    /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => Data.Keys;
+
+    /// <summary>
+    /// Метаданные строки
+    /// </summary>
+    public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;
 
     /// <summary>
     /// Пытается получить значение ячейки

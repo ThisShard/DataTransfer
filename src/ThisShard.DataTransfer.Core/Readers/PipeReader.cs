@@ -1,5 +1,4 @@
 using System.Threading.Channels;
-using ThisShard.Database.Core.Models;
 using ThisShard.Database.Core.Models.Rows;
 using ThisShard.Database.Core.Writers;
 
@@ -39,7 +38,7 @@ public class PipeReader : IRowReader
         if (_cts.IsCancellationRequested)
             throw new ObjectDisposedException("PipeReader is disposed");
 
-        Startreading();
+        StartReading();
         
         if (!await _channel.Reader.WaitToReadAsync())
             return null;
@@ -51,18 +50,18 @@ public class PipeReader : IRowReader
     /// <summary>
     /// Начало записи
     /// </summary>
-    private void Startreading()
+    private void StartReading()
     {
         if (_reading != null)
             return;
 
-        _reading = reading();
+        _reading = Reading();
     }
     
     /// <summary>
     /// Выполнение действия записи
     /// </summary>
-    private async Task reading()
+    private async Task Reading()
     {
         try
         {
@@ -82,6 +81,11 @@ public class PipeReader : IRowReader
     private class Writer : IRowWriter
     {
         private readonly Channel<IRow> _channel;
+
+        /// <summary>
+        /// Состояние писателя
+        /// </summary>
+        public WriterState State => WriterState.Writing;
 
         /// <summary>
         /// Строки ожидающие обработку
@@ -113,5 +117,14 @@ public class PipeReader : IRowReader
         /// Принудительно производит запись
         /// </summary>
         public ValueTask Flush() => ValueTask.CompletedTask;
+
+        /// <summary>
+        /// Завершает запись
+        /// </summary>
+        public ValueTask Complete() => ValueTask.CompletedTask;
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>
+        /// <returns>A task that represents the asynchronous dispose operation.</returns>
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

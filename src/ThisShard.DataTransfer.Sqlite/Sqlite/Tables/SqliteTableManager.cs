@@ -167,10 +167,10 @@ public class SqliteTableManager : ISqliteTableManager
     /// <summary>
     /// Конвертирует таблицу в Sqlite
     /// </summary>
-    public SqliteTable ConvertTable(ITable table)
+    public SqliteTable ConvertTable(ITable table, string? name = null)
     {
         var columns = ConvertColumns(table).ToArray();
-        var rawName = table.RawPath.Last();
+        var rawName = name ?? table.RawPath.Last();
         return new SqliteTable()
         {
             Key = table.Key,

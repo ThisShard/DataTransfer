@@ -11,6 +11,9 @@ namespace ThisShard.Database.Core.Extensions;
 /// </summary>
 public static class RowReaderExtensions
 {
+    private const string IndexKey = "__RowReaderExtensions_Index";
+    private const string PreviousRowKey = "__RowReaderExtensions_PreviousRow";
+    
     /// <summary>
     /// Перегоняет строки из ридера в писатели
     /// </summary>
@@ -44,36 +47,43 @@ public static class RowReaderExtensions
     /// </summary>
     public static async ValueTask<WritingResult> TryWriteTo(this IRowReader reader, IReadOnlyCollection<IRowWriter> writers, CancellationToken cancellationToken = default)
     {   
-        IRow? lastWrittenRow = null;
+        IRow? lastRow = null;
         
         try
         {
+            var _isCanceled = false;
+            var index = 0l;
+            
             while(true)
             {
                 if (cancellationToken.IsCancellationRequested)
-                    return new WritingResult()
-                    {
-                        State = WritingState.Canceled,
-                        LastWrittenRow = lastWrittenRow,
-                        Reader = reader,
-                        Writers = writers
-                    };
+                {
+                    _isCanceled = true;
+                    break;
+                }
                 
                 var row = await reader.Read();
                 if (row == null)
-                    return new WritingResult()
-                    {
-                        State = WritingState.Success,
-                        LastWrittenRow = lastWrittenRow,
-                        Reader = reader,
-                        Writers = writers
-                    };
+                    break;
 
+                SetMetadata(row, index++, lastRow);
+                
                 foreach (var writer in writers)
                     await writer.Write(row);
             
-                lastWrittenRow = row;
+                lastRow = row;
             }
+
+            foreach (var writer in writers)
+                await writer.Flush();
+
+            return new WritingResult
+            {
+                State = _isCanceled ? WritingState.Canceled : WritingState.Success,
+                LastWrittenRow = GetLastWrittenRow(lastRow, writers),
+                Reader = reader,
+                Writers = writers
+            };
         }
         catch (Exception ex)
         {
@@ -81,11 +91,48 @@ public static class RowReaderExtensions
             {
                 State = WritingState.Error,
                 Exception = ex,
-                LastWrittenRow = lastWrittenRow,
+                LastWrittenRow = GetLastWrittenRow(lastRow, writers),
                 Reader = reader,
                 Writers = writers
             };
         }
+    }
+
+    /// <summary>
+    /// Возвращает последнюю записанную строку
+    /// </summary>
+    private static IRow? GetLastWrittenRow(IRow? lastRow,
+        IReadOnlyCollection<IRowWriter> writers)
+    {
+        var rowsToSearch = writers
+            .SelectMany(x => x.PendingRows);
+        
+        if (lastRow != null)
+            rowsToSearch = rowsToSearch.Concat([lastRow]);
+
+        var lastWrittenRow = rowsToSearch
+            .Select(GetMetadata)
+            .DefaultIfEmpty((0, null))
+            .MinBy(x => x.Index);
+
+        return lastWrittenRow.PreviousRow;
+    }
+
+    /// <summary>
+    /// Получает метаданные
+    /// </summary>
+    private static (long Index, IRow? PreviousRow) GetMetadata(IRow row)
+    {
+        return ((long)row.Metadata[IndexKey]!, row.Metadata[PreviousRowKey] as IRow);
+    }
+
+    /// <summary>
+    /// Устанавливает метаданные
+    /// </summary>
+    private static void SetMetadata(IRow row, long index, IRow? previousRow)
+    {
+        row.Metadata[IndexKey] = index;
+        row.Metadata[PreviousRowKey] = previousRow;
     }
     
     /// <summary>

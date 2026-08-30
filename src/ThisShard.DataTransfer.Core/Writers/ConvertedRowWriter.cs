@@ -12,6 +12,11 @@ public class ConvertedRowWriter : IRowWriter
     private readonly Func<IRow, IRow?> _converter;
 
     /// <summary>
+    /// Состояние писателя
+    /// </summary>
+    public WriterState State => _innerWriter.State;
+
+    /// <summary>
     /// Строки ожидающие обработку
     /// </summary>
     public IEnumerable<IRow> PendingRows => _innerWriter.PendingRows;
@@ -42,8 +47,26 @@ public class ConvertedRowWriter : IRowWriter
         await _innerWriter.Write(convertedRow);
     }
 
+    /// <summary>
+    /// Принудительно производит запись
+    /// </summary>
     public async ValueTask Flush()
     {
         await _innerWriter.Flush();
+    }
+
+    /// <summary>
+    /// Завершает запись
+    /// </summary>
+    public async ValueTask Complete()
+    {
+        await _innerWriter.Complete();
+    }
+
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await _innerWriter.DisposeAsync();
     }
 }

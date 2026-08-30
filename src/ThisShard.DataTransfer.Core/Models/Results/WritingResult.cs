@@ -27,10 +27,10 @@ public record WritingResult
     /// <summary>
     /// Ридер
     /// </summary>
-    public required IRowReader Reader { get; init; }
+    public IRowReader? Reader { get; init; }
     
     /// <summary>
     /// Писатели
     /// </summary>
-    public required IReadOnlyCollection<IRowWriter> Writers { get; init; }
+    public IReadOnlyCollection<IRowWriter>? Writers { get; init; }
 }

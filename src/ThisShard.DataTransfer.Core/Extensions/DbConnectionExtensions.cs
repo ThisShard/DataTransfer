@@ -45,6 +45,20 @@ public static class DbConnectionExtensions
     /// Писать данные в БД
     /// </summary>
     public static async ValueTask Write<TConnection>(this TConnection connection, 
+        Func<TConnection, ValueTask<IRowWriter>> createWriter,
+        Func<IRowWriter, ValueTask> writing)
+        where TConnection : DbConnection =>
+        await connection.Execute(async () =>
+        {
+            await using var writer = await createWriter(connection);
+            await writing(writer);
+            await writer.Complete();
+        });
+    
+    /// <summary>
+    /// Писать данные в БД
+    /// </summary>
+    public static async ValueTask Write<TConnection>(this TConnection connection, 
         Func<TConnection, ValueTask<ITableWriter>> createWriter,
         Func<IRowWriter, ValueTask> writing)
         where TConnection : DbConnection =>

@@ -271,13 +271,14 @@ public static class NpgsqlBulkOperationsExtensions
         string[] tablePath,
         RowState rowState = RowState.Added,
         NpgsqlBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var table = await connection.GetTableInfo(tablePath, options);
         if (table == null)
             throw new InvalidOperationException("Table not exists");
         
-        return connection.GetSustainableRowReader(table, rowState, options, ownsConnection);
+        return connection.GetSustainableRowReader(table, rowState, options, ownsConnection, startRow);
     }
     
     /// <summary>
@@ -288,13 +289,14 @@ public static class NpgsqlBulkOperationsExtensions
         Func<NpgsqlConnection, NpgsqlCommand> commandFactory,
         RowState rowState = RowState.Added,
         NpgsqlBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var table = await connection.GetTableInfo(tablePath, options);
         if (table == null)
             throw new InvalidOperationException("Table not exists");
         
-        return connection.GetSustainableRowReader(table, commandFactory, rowState, options, ownsConnection);
+        return connection.GetSustainableRowReader(table, commandFactory, rowState, options, ownsConnection, startRow);
     }
     
     /// <summary>
@@ -304,12 +306,13 @@ public static class NpgsqlBulkOperationsExtensions
         PgTable table,
         RowState rowState = RowState.Added,
         NpgsqlBulkOperationsOptions? options = null,
-        bool ownsConnection = false) => connection.GetSustainableRowReader(table, cn =>
+        bool ownsConnection = false,
+        IRow? startRow = null) => connection.GetSustainableRowReader(table, cn =>
     {
         var command = cn.CreateCommand();
         command.CommandText = $"SELECT * FROM {table.Path}";
         return command;
-    }, rowState, options, ownsConnection);
+    }, rowState, options, ownsConnection, startRow);
     
     /// <summary>
     /// Возвращает читателя
@@ -319,7 +322,8 @@ public static class NpgsqlBulkOperationsExtensions
         Func<NpgsqlConnection, NpgsqlCommand> commandFactory,
         RowState rowState = RowState.Added,
         NpgsqlBulkOperationsOptions? options = null,
-        bool ownsConnection = false)
+        bool ownsConnection = false,
+        IRow? startRow = null)
     {
         var primaryKey = table.Columns
             .Where(x => x.IsPrimaryKey)
@@ -332,7 +336,7 @@ public static class NpgsqlBulkOperationsExtensions
         return connection.GetSustainableRowReader(async (cn, row, writer, ct) =>
         {
             await using var command = commandFactory(cn);
-            AdjustCommand(command, row, primaryKey);
+            AdjustCommand(command, row ?? startRow, primaryKey);
             await using var reader = await command.ExecuteReaderAsync(ct).GetRowReader(rowState);
             await reader.WriteTo(writer, ct);
         }, options.SustainableOptions ?? SustainableOperationsOptions<NpgsqlConnection>.Disabled, ownsConnection);

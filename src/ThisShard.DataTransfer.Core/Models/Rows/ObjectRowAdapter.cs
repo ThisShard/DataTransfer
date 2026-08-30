@@ -8,6 +8,8 @@ namespace ThisShard.Database.Core.Models.Rows;
 /// </summary>
 public class ObjectRowAdapter<T> : IRow
 {
+    #region Static
+
     private static readonly IReadOnlyDictionary<string, Func<T, object?>> PropertyAccessors;
 
     static ObjectRowAdapter()
@@ -25,7 +27,11 @@ public class ObjectRowAdapter<T> : IRow
         var lambdaExpression = Expression.Lambda<Func<T, object?>>(callExpression, parameterExpression);
         return lambdaExpression.Compile();
     }
+    
+    #endregion
 
+    private IDictionary<string, object?>? _metadata;
+    
     /// <summary>
     /// Состояние
     /// </summary>
@@ -35,6 +41,16 @@ public class ObjectRowAdapter<T> : IRow
     /// Объект
     /// </summary>
     public T? Object { get; set; }
+
+    /// <summary>
+    /// Возвращает список ключей
+    /// </summary>
+    public IEnumerable<string> GetKeys() => PropertyAccessors.Keys;
+
+    /// <summary>
+    /// Метаданные строки
+    /// </summary>
+    public IDictionary<string, object?> Metadata => _metadata ??= new Dictionary<string, object>()!;
 
     /// <summary>
     /// Пытается получить значение ячейки

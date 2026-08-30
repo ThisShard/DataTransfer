@@ -6,7 +6,7 @@ namespace ThisShard.Database.Core.Writers;
 /// <summary>
 /// Писатель данных в таблцу
 /// </summary>
-public interface ITableWriter : IAsyncDisposable, IRowWriter
+public interface ITableWriter : IRowWriter
 {
     /// <summary>
     /// Текущая таблица
@@ -27,9 +27,4 @@ public interface ITableWriter : IAsyncDisposable, IRowWriter
     /// Инициализация временной таблицей
     /// </summary>
     ValueTask Init(IStagingTable stagingTable);
-
-    /// <summary>
-    /// Завершает запись
-    /// </summary>
-    ValueTask Complete();
 }
