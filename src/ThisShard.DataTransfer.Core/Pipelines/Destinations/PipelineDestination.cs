@@ -11,10 +11,11 @@ public class PipelineDestination<TConnection> : IPipelineDestination
 {
     protected bool OwnsConnection { get; }
     protected Func<ValueTask<TConnection>> ConnectionFactory { get; }
-    protected Func<TConnection, ValueTask<IRowWriter>> WriterFactory { get; }
+    protected Func<TConnection, ITable?, ValueTask<IRowWriter>> WriterFactory { get; }
     protected Func<TConnection, ITable, ValueTask>? InitFunc { get; }
 
     protected TConnection? Connection { get; set; }
+    protected ITable? Table { get; set; }
     
     /// <summary>
     /// Ключ
@@ -22,9 +23,26 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     public string Key { get; }
 
     public PipelineDestination(
+        string key,
+        Func<ValueTask<TConnection>> connectionFactory,
+        Func<TConnection, ValueTask<IRowWriter>> writerFactory,
+        Func<TConnection, ITable, ValueTask>? initFunc = null,
+        bool ownsConnection = true
+    ) : this(
+        key,
+        connectionFactory,
+        (writerFactory != null! ? 
+            (cn, _) => writerFactory(cn) 
+            : null)!,
+        initFunc,
+        ownsConnection)
+    {
+    }
+    
+    public PipelineDestination(
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
-        Func<TConnection, ValueTask<IRowWriter>> writerFactory, 
+        Func<TConnection, ITable?, ValueTask<IRowWriter>> writerFactory, 
         Func<TConnection, ITable, ValueTask>? initFunc = null, 
         bool ownsConnection = true
         )
@@ -41,6 +59,8 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     /// </summary>
     public async ValueTask Init(ITable table)
     {
+        Table = table;
+        
         if (InitFunc == null)
             return;
 
@@ -54,7 +74,7 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     public async ValueTask<IRowWriter> GetWriter()
     {
         Connection ??= await CreateConnection();
-        return await WriterFactory(Connection);
+        return await WriterFactory(Connection, Table);
     }
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.</summary>
