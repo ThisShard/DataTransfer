@@ -19,7 +19,7 @@ public class SqlitePipelineSourceBuilder : IPipelineSourceBuilder
 {
     private string? _tableName;
     private SqliteTable? _table;
-    private RowState _rowState = RowState.Added;
+    private RowState _rowState = RowState.AddedOrModified;
     private SqliteBulkOperationsOptions? _options;
     private Func<ValueTask<SqliteConnection>>? _connectionFactory;
     private Func<SqliteConnection, SqliteCommand>? _commandFactory;

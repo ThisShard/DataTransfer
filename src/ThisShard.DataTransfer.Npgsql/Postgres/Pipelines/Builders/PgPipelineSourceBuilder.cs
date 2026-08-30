@@ -19,7 +19,7 @@ public class PgPipelineSourceBuilder : IPipelineSourceBuilder
 {
     private string[]? _tablePath;
     private PgTable? _table;
-    private RowState _rowState = RowState.Added;
+    private RowState _rowState = RowState.AddedOrModified;
     private NpgsqlBulkOperationsOptions? _options;
     private Func<ValueTask<NpgsqlConnection>>? _connectionFactory;
     private Func<NpgsqlConnection, NpgsqlCommand>? _commandFactory;
