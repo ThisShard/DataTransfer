@@ -76,7 +76,7 @@ public class JsonPipelineDestinationBuilder : IPipelineDestinationBuilder
     /// <summary>
     /// Указать фабрику писателей
     /// </summary>
-    public JsonPipelineDestinationBuilder WithReaderFactory(Func<ValueTask<Utf8JsonWriter>> factory, bool ownsWriter = true)
+    public JsonPipelineDestinationBuilder WithWriterFactory(Func<ValueTask<Utf8JsonWriter>> factory, bool ownsWriter = true)
     {
         _writerFactory = factory;
         _ownsWriter = ownsWriter;

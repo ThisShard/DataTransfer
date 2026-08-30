@@ -79,6 +79,7 @@ public class Pipeline : BasePipeline<PipelineState>
         {
             if (writers != null)
                 await DisposeHelper.DisposeMany(writers);
+            await OnDispose();
         }
     }
 
