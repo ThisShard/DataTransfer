@@ -1,4 +1,4 @@
-using ThisShard.Database.Schema.Rows;
+using ThisShard.Database.Models.Rows;
 
 namespace ThisShard.Database.Pipeline.Writers;
 

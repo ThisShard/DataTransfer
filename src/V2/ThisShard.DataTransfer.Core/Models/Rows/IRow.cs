@@ -1,4 +1,4 @@
-namespace ThisShard.Database.Schema.Rows;
+namespace ThisShard.Database.Models.Rows;
 
 /// <summary>
 /// Строка данных
