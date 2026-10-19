@@ -1,6 +1,6 @@
 using ThisShard.Database.Models.Rows;
 
-namespace ThisShard.Database.Pipeline.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Базовый райтер

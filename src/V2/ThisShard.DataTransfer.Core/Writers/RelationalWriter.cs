@@ -2,9 +2,8 @@ using System.Data;
 using ThisShard.Database.Models.Columns;
 using ThisShard.Database.Models.Rows;
 using ThisShard.Database.Models.Tables;
-using ThisShard.Database.Schemas;
 
-namespace ThisShard.Database.Pipeline.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Райтер в реляционную таблицу

@@ -1,6 +1,6 @@
 using ThisShard.Database.Models.Tables;
 
-namespace ThisShard.Database.Pipeline.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Фабрика райтеров

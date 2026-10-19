@@ -1,8 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using ThisShard.Database.Models.Rows;
 
-namespace ThisShard.Database.Core.Models.Rows;
+namespace ThisShard.Database.Models.Rows;
 
 /// <summary>
 /// Адаптер объекта к интерфейсу IRow

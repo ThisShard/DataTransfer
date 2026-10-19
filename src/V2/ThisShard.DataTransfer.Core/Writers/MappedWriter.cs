@@ -1,6 +1,6 @@
 using ThisShard.Database.Models.Rows;
 
-namespace ThisShard.Database.Pipeline.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Враппер над райтером, который маппит строки перед передачей их внутреннему райтеру

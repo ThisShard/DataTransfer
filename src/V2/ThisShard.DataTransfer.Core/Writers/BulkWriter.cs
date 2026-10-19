@@ -1,7 +1,6 @@
 using ThisShard.Database.Models.Tables;
-using ThisShard.Database.Schemas;
 
-namespace ThisShard.Database.Pipeline.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Райтер в реляционную таблицу с использованием Bulk операций
