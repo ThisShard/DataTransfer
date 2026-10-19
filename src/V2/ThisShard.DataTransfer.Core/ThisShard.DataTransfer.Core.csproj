@@ -7,4 +7,8 @@
         <RootNamespace>ThisShard.Database</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\ThisShard.Foundation.ValueConverters\ThisShard.Foundation.ValueConverters.csproj" />
+    </ItemGroup>
+
 </Project>
