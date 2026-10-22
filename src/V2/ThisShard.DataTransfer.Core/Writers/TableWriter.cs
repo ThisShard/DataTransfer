@@ -14,14 +14,11 @@ public abstract class TableWriter : BufferedWriter
     /// Схема таблицы
     /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
-    protected ITableSchema TableSchema { get; }
+    protected ITableSchema TableSchema { get; set; }
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    protected TableWriter(ITableSchema tableSchema, int bufferSize) : base(bufferSize)
+    protected TableWriter(int bufferSize) : base(bufferSize)
     {
-        ArgumentNullException.ThrowIfNull(tableSchema);
-        
-        TableSchema = tableSchema;
     }
 
     #region Фильтрация строк

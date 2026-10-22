@@ -73,7 +73,7 @@ public static class WriterExtensions
     /// Перегоняет строки из читателя в писатель
     /// </summary>
     public static ValueTask<WritingResult> TryWriteFrom(this IWriter writer, DbDataReader reader, RowState rowState = RowState.Added, bool ownsReader = true, CancellationToken cancellationToken = default) => 
-        writer.TryWriteFrom(reader.GetRowReader(rowState, ownsReader), cancellationToken);
+        writer.TryWriteFrom(reader.GetReader(rowState, ownsReader), cancellationToken);
     
     /// <summary>
     /// Перегоняет строки из читателя в писатель используя конвертер
@@ -85,7 +85,7 @@ public static class WriterExtensions
     /// Перегоняет строки из читателя в писатель
     /// </summary>
     public static ValueTask<IRow?> WriteFrom(this IWriter writer, DbDataReader reader, RowState rowState = RowState.Added, bool ownsReader = true, CancellationToken cancellationToken = default) => 
-        writer.WriteFrom(reader.GetRowReader(rowState, ownsReader), cancellationToken);
+        writer.WriteFrom(reader.GetReader(rowState, ownsReader), cancellationToken);
     
     /// <summary>
     /// Перегоняет строки из читателя в писатель используя конвертер

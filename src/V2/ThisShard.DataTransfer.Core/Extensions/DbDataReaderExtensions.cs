@@ -11,7 +11,7 @@ public static class DbDataReaderExtensions
     /// <summary>
     /// Возвращает читателя строк для DbDataReader
     /// </summary>
-    public static IReader GetRowReader(this DbDataReader reader, RowState defaultRowState = RowState.Added, bool ownsReader = true)
+    public static IReader GetReader(this DbDataReader reader, RowState defaultRowState = RowState.Added, bool ownsReader = true)
     {
         return new DbDataReaderAdapter(reader, defaultRowState, ownsReader);
     }
@@ -19,11 +19,11 @@ public static class DbDataReaderExtensions
     /// <summary>
     /// Возвращает читателя строк для DbDataReader
     /// </summary>
-    public static async Task<IReader> GetRowReader<TReader>(this Task<TReader> task,
+    public static async Task<IReader> GetReader<TReader>(this Task<TReader> task,
         RowState defaultRowState = RowState.Added)
         where TReader : DbDataReader
     {
-        return (await task).GetRowReader(defaultRowState);
+        return (await task).GetReader(defaultRowState);
     }
 
     /// <summary>

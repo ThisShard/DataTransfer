@@ -10,15 +10,14 @@ public abstract class BulkWriter : TableWriter
     /// <summary>
     /// Схема временной таблицы
     /// </summary>
-    protected IStagingTableSchema StagingTableSchema { get; init; }
+    protected IStagingTableSchema StagingTableSchema { get; set; }
     
     /// <summary>
     /// Райтер владеет временной таблицей
     /// </summary>
-    protected bool OwnsStagingTable { get; init; }
+    protected bool OwnsStagingTable { get; set; }
     
-    protected BulkWriter(IStagingTableSchema stagingTableSchema, ITableSchema tableSchema, bool ownsStagingTable, int bufferSize) : base(tableSchema, bufferSize)
+    protected BulkWriter(int bufferSize) : base(bufferSize)
     {
-        OwnsStagingTable = ownsStagingTable;
     }
 }

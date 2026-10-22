@@ -14,6 +14,21 @@ public class DbPipelineDestination<TConnection> : PipelineDestination<TConnectio
     private bool _isConnectionOpen;
     
     public DbPipelineDestination(
+        string key,
+        Func<ValueTask<TConnection>> connectionFactory,
+        Func<TConnection, ValueTask<IWriter>> writerFactory,
+        Func<TConnection, ITable?, ValueTask>? initFunc = null,
+        bool ownsConnection = true
+    ) : base(
+        key,
+        connectionFactory,
+        writerFactory,
+        initFunc,
+        ownsConnection)
+    {
+    }
+    
+    public DbPipelineDestination(
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
         Func<TConnection, ITable?, ValueTask<IWriter>> writerFactory, 

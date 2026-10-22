@@ -23,6 +23,23 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     public string Key { get; }
     
     public PipelineDestination(
+        string key,
+        Func<ValueTask<TConnection>> connectionFactory,
+        Func<TConnection, ValueTask<IWriter>> writerFactory,
+        Func<TConnection, ITable, ValueTask>? initFunc = null,
+        bool ownsConnection = true
+    ) : this(
+        key,
+        connectionFactory,
+        (writerFactory != null! ? 
+            (cn, _) => writerFactory(cn) 
+            : null)!,
+        initFunc,
+        ownsConnection)
+    {
+    }
+    
+    public PipelineDestination(
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
         Func<TConnection, ITable?, ValueTask<IWriter>> writerFactory, 
