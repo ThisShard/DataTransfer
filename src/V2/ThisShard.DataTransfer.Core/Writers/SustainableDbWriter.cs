@@ -1,19 +1,13 @@
 using System.Data.Common;
-using ThisShard.Database.Core.Extensions;
-using ThisShard.Database.Core.Models;
-using ThisShard.Database.Core.Models.Rows;
-using ThisShard.Database.Core.Models.Tables;
 using ThisShard.Database.Extensions;
 using ThisShard.Database.Models.Rows;
-using ThisShard.Database.Models.Tables;
-using ThisShard.Database.Writers;
 
-namespace ThisShard.Database.Core.Writers;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Устойчивый писатель данных в БД
 /// </summary>
-public class SustainableRelationalWriter<TConnection> : BaseWriter
+public class SustainableDbWriter<TConnection> : BaseWriter
     where TConnection : DbConnection
 {
     private readonly TConnection _connection;
@@ -25,9 +19,6 @@ public class SustainableRelationalWriter<TConnection> : BaseWriter
 
     private IRow[] _pendingRows = Array.Empty<IRow>();
     private IWriter? _writer;
-
-    private bool _isInitializedByTable;
-    private bool _isInitializedByStagingTable;
 
     /// <summary>
     /// Строки ожидающие обработку
@@ -47,7 +38,7 @@ public class SustainableRelationalWriter<TConnection> : BaseWriter
         return buffer;
     }
 
-    public SustainableRelationalWriter(
+    public SustainableDbWriter(
         TConnection connection, 
         Func<TConnection, int, ValueTask<IWriter?>> writerFactory, 
         Func<TConnection, Exception, bool> terminatePredicate, 
@@ -196,7 +187,7 @@ public class SustainableRelationalWriter<TConnection> : BaseWriter
         if (_pendingRows.Length > 0)
         {
             if (_rowConverterOnRetry != null)
-                await writer.UsingConverter(_rowConverterOnRetry).Write(_pendingRows);
+                await writer.UsingMapper(_rowConverterOnRetry).Write(_pendingRows);
             else
                 await writer.Write(_pendingRows);
         }

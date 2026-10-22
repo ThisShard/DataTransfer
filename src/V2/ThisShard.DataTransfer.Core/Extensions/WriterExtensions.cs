@@ -1,7 +1,10 @@
 using System.Data;
 using System.Data.Common;
 using ThisShard.Database.Mappers;
+using ThisShard.Database.Models.Results;
 using ThisShard.Database.Models.Rows;
+using ThisShard.Database.Models.Tables;
+using ThisShard.Database.Readers;
 using ThisShard.Database.Writers;
 using ThisShard.Foundation.Converters;
 
@@ -75,7 +78,7 @@ public static class WriterExtensions
     /// <summary>
     /// Перегоняет строки из читателя в писатель используя конвертер
     /// </summary>
-    public static ValueTask<WritingResult> TryWriteFrom(this IWriter writer, IRowReader reader, CancellationToken cancellationToken = default) =>
+    public static ValueTask<WritingResult> TryWriteFrom(this IWriter writer, IReader reader, CancellationToken cancellationToken = default) =>
         reader.TryWriteTo(writer, cancellationToken);
     
     /// <summary>
@@ -87,34 +90,20 @@ public static class WriterExtensions
     /// <summary>
     /// Перегоняет строки из читателя в писатель используя конвертер
     /// </summary>
-    public static ValueTask<IRow?> WriteFrom(this IWriter writer, IRowReader reader, CancellationToken cancellationToken = default) =>
+    public static ValueTask<IRow?> WriteFrom(this IWriter writer, IReader reader, CancellationToken cancellationToken = default) =>
         reader.WriteTo(writer, cancellationToken);
-
-    /// <summary>
-    /// Возвращает писатель строк использующий конвертер значений
-    /// </summary>
-    public static IWriter UsingValueConverter(this IWriter writer, IValueConverter converter)
-    {
-        var tableWriter = writer as ITableWriter;
-        if (tableWriter == null)
-            throw new NotSupportedException("The writer does not support the ITableWriter.");
-        
-        return writer.UsingMapper(converter.CreateRowMapper(tableWriter.Table));
-    }
     
     /// <summary>
     /// Возвращает писатель строк использующий маппер
     /// </summary>
     public static IWriter UsingMapper(this IWriter writer, IRowMapper mapper) =>
-        writer.UsingConverter(row => new MappedRow(row, mapper));
+        writer.UsingMapper(row => new MappedRow(row, mapper));
     
     /// <summary>
-    /// Возвращает писатель строк использующий конвертер
+    /// Возвращает райтер строк использующий функцию мэппинга
     /// </summary>
-    public static IWriter UsingConverter(this IWriter writer, Func<IRow, IRow?> converter)
-    {
-        return new ConvertedRowWriter(writer, converter);
-    }
+    public static IWriter UsingMapper(this IWriter writer, Func<IRow, IRow?> mapper) => 
+        new MappedWriter(writer, mapper);
     
     /// <summary>
     /// Записывает множество строк

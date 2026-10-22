@@ -94,13 +94,12 @@ public static class DbConnectionExtensions
     public static IWriter GetSustainableWriter<TConnection>(this TConnection connection,
         Func<TConnection, IWriter> factory,
         SustainableOperationsOptions<TConnection>? options = null,
-        bool isInitialized = false,
         bool ownsConnection = false)
         where TConnection : DbConnection
     {
         options ??= SustainableOperationsOptions<TConnection>.Default;
         
-        return new SustainableRelationalTableWriter<TConnection>(
+        return new SustainableDbWriter<TConnection>(
             connection: connection, 
             writerFactory: async (cn, retry) =>
             {
@@ -114,7 +113,6 @@ public static class DbConnectionExtensions
                 return factory(cn);
             }, 
             terminatePredicate: options.TerminatePredicate, 
-            isInnerWriterInitialized: isInitialized,
             rowConverterOnRetry: options.RowConverterOnRetry,
             ownsConnection: ownsConnection);
     }

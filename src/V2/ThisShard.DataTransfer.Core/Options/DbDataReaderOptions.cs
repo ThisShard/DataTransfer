@@ -1,16 +1,16 @@
 using ThisShard.Database.Tables;
 
-namespace ThisShard.Database.Core.Options;
+namespace ThisShard.Database.Options;
 
 /// <summary>
 /// Настройки Bulk операций для Sqlite
 /// </summary>
-public class BulkOperationsOptions
+public class DbDataReaderOptions
 {
     /// <summary>
     /// Настройки по умолчанию
     /// </summary>
-    public static BulkOperationsOptions Default { get; set; } = new();
+    public static DbDataReaderOptions Default { get; set; } = new();
     
     /// <summary>
     /// Провайдер таблиц из датаридера

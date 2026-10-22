@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using ThisShard.Database.Extensions;
+using ThisShard.Database.Mappers;
 using ThisShard.Database.Models.Rows;
 
 namespace ThisShard.Database.Options;
@@ -11,6 +12,9 @@ namespace ThisShard.Database.Options;
 public record SustainableOperationsOptions<TConnection>
     where TConnection: DbConnection
 {
+    // ReSharper disable once StaticMemberInGenericType
+    private static readonly IRowMapper SafeStateRowMapper = new StateRowMapper(state => state.GetSafeState());
+    
     /// <summary>
     /// Настройки по умолчанию
     /// </summary>
@@ -44,7 +48,5 @@ public record SustainableOperationsOptions<TConnection>
     /// <summary>
     /// Конвертер строк при повторной попытке обработки
     /// </summary>
-    public Func<IRow, IRow?>? RowConverterOnRetry { get; init; } = row => row.State == row.State.GetSafeState()
-        ? row
-        : new StateRowWrapper(row) { State = row.State.GetSafeState() };
+    public Func<IRow, IRow?>? RowConverterOnRetry { get; init; } = row => new MappedRow(row, SafeStateRowMapper);
 }

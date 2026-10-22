@@ -5,7 +5,7 @@ namespace ThisShard.Database.Writers;
 /// <summary>
 /// Райтер в реляционную таблицу с использованием Bulk операций
 /// </summary>
-public abstract class BulkWriter : RelationalWriter
+public abstract class BulkWriter : TableWriter
 {
     /// <summary>
     /// Схема временной таблицы

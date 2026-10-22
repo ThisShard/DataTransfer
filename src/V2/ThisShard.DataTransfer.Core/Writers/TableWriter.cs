@@ -8,7 +8,7 @@ namespace ThisShard.Database.Writers;
 /// <summary>
 /// Райтер в реляционную таблицу
 /// </summary>
-public abstract class RelationalWriter : BufferedWriter
+public abstract class TableWriter : BufferedWriter
 {
     /// <summary>
     /// Схема таблицы
@@ -17,7 +17,7 @@ public abstract class RelationalWriter : BufferedWriter
     protected ITableSchema TableSchema { get; }
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    protected RelationalWriter(ITableSchema tableSchema, int bufferSize) : base(bufferSize)
+    protected TableWriter(ITableSchema tableSchema, int bufferSize) : base(bufferSize)
     {
         ArgumentNullException.ThrowIfNull(tableSchema);
         
