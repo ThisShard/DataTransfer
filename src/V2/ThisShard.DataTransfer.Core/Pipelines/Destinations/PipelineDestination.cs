@@ -11,8 +11,8 @@ public class PipelineDestination<TConnection> : IPipelineDestination
 {
     protected bool OwnsConnection { get; }
     protected Func<ValueTask<TConnection>> ConnectionFactory { get; }
-    protected Func<TConnection, ITable, ValueTask<IWriter>> WriterFactory { get; }
-    protected Func<TConnection, ITable, ValueTask>? InitFunc { get; }
+    protected Func<TConnection, ITable?, ValueTask<IWriter>> WriterFactory { get; }
+    protected Func<TConnection, ITable?, ValueTask>? InitFunc { get; }
 
     protected TConnection? Connection { get; set; }
     protected ITable? Table { get; set; }
@@ -25,8 +25,8 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     public PipelineDestination(
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
-        Func<TConnection, ITable, ValueTask<IWriter>> writerFactory, 
-        Func<TConnection, ITable, ValueTask>? initFunc = null, 
+        Func<TConnection, ITable?, ValueTask<IWriter>> writerFactory, 
+        Func<TConnection, ITable?, ValueTask>? initFunc = null, 
         bool ownsConnection = true
         )
     {
@@ -40,7 +40,7 @@ public class PipelineDestination<TConnection> : IPipelineDestination
     /// <summary>
     /// Инициализирует таблицей
     /// </summary>
-    public async ValueTask Init(ITable table)
+    public async ValueTask Init(ITable? table)
     {
         Table = table;
         

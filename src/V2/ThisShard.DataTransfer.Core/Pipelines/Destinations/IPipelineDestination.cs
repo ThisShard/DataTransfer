@@ -16,7 +16,7 @@ public interface IPipelineDestination : IAsyncDisposable
     /// <summary>
     /// Инициализирует таблицей
     /// </summary>
-    public ValueTask Init(ITable table);
+    public ValueTask Init(ITable? table);
     
     /// <summary>
     /// Возвращает писателя

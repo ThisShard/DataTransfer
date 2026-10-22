@@ -16,8 +16,8 @@ public class DbPipelineDestination<TConnection> : PipelineDestination<TConnectio
     public DbPipelineDestination(
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
-        Func<TConnection, ITable, ValueTask<IWriter>> writerFactory, 
-        Func<TConnection, ITable, ValueTask>? initFunc = null, 
+        Func<TConnection, ITable?, ValueTask<IWriter>> writerFactory, 
+        Func<TConnection, ITable?, ValueTask>? initFunc = null, 
         bool ownsConnection = true
         ) : base(key, connectionFactory, writerFactory, initFunc, ownsConnection)
     {

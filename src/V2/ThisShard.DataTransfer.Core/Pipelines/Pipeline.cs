@@ -138,9 +138,7 @@ public class Pipeline : BasePipeline<PipelineState>
             
             foreach (var destination in _destinations)
             {
-                if (sourceTable != null)
-                    await destination.Init(sourceTable);
-                
+                await destination.Init(sourceTable);
                 writers.Add(await destination.GetWriter());
             }
         }

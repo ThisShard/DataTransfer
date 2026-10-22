@@ -17,7 +17,7 @@ public interface IPipelineSource : IAsyncDisposable
     /// <summary>
     /// Возвращает таблицу
     /// </summary>
-    public ValueTask<ITable> GetTable();
+    public ValueTask<ITable?> GetTable();
     
     /// <summary>
     /// Возвращает читателя

@@ -28,7 +28,7 @@ public class PipelineSource<TConnection> : IPipelineSource
     /// <summary>
     /// Геттер таблиц
     /// </summary>
-    protected Func<TConnection, ValueTask<ITable>> TableGetter { get; }
+    protected Func<TConnection, ValueTask<ITable?>>? TableGetter { get; }
 
     /// <summary>
     /// Текщуее соединение
@@ -44,7 +44,7 @@ public class PipelineSource<TConnection> : IPipelineSource
         string key, 
         Func<ValueTask<TConnection>> connectionFactory, 
         Func<TConnection, IRow?, ValueTask<IReader>> readerFactory, 
-        Func<TConnection, ValueTask<ITable>> tableGetter,
+        Func<TConnection, ValueTask<ITable?>>? tableGetter,
         bool ownsConnection = true
     )
     {
@@ -58,8 +58,11 @@ public class PipelineSource<TConnection> : IPipelineSource
     /// <summary>
     /// Возвращает таблицу
     /// </summary>
-    public async ValueTask<ITable> GetTable()
+    public async ValueTask<ITable?> GetTable()
     {
+        if (TableGetter == null)
+            return null;
+        
         Connection ??= await CreateConnection();
         return await TableGetter(Connection);
     }
@@ -101,9 +104,7 @@ public class PipelineSource<TConnection> : IPipelineSource
     /// <summary>
     /// Закрывает соединение
     /// </summary>
-    protected virtual async ValueTask CloseConnection()
-    {
-    }
+    protected virtual ValueTask CloseConnection() => ValueTask.CompletedTask;
     
     /// <summary>
     /// Диспозит соединение
