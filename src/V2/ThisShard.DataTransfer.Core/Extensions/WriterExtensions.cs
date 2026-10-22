@@ -1,7 +1,6 @@
 using System.Data;
 using System.Data.Common;
 using ThisShard.Database.Mappers;
-using ThisShard.Database.Models.Results;
 using ThisShard.Database.Models.Rows;
 using ThisShard.Database.Models.Tables;
 using ThisShard.Database.Readers;
@@ -92,6 +91,14 @@ public static class WriterExtensions
     /// </summary>
     public static ValueTask<IRow?> WriteFrom(this IWriter writer, IReader reader, CancellationToken cancellationToken = default) =>
         reader.WriteTo(writer, cancellationToken);
+    
+    /// <summary>
+    /// Возвращает писатель строк использующий конвертер значений
+    /// </summary>
+    public static IWriter UsingValueConverter(this IWriter writer, ITable table, IValueConverter converter)
+    {
+        return writer.UsingMapper(converter.CreateRowMapper(table));
+    }
     
     /// <summary>
     /// Возвращает писатель строк использующий маппер

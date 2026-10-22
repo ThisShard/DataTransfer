@@ -1,4 +1,3 @@
-using ThisShard.Database.Models.Results;
 using ThisShard.Database.Models.Rows;
 using ThisShard.Database.Readers;
 using ThisShard.Database.Writers;

@@ -1,4 +1,4 @@
-namespace ThisShard.Database.Models.Results;
+namespace ThisShard.Database.Writers;
 
 /// <summary>
 /// Состояние записи
