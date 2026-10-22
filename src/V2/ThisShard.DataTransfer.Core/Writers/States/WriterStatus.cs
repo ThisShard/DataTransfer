@@ -1,4 +1,4 @@
-namespace ThisShard.Database.Writers;
+namespace ThisShard.Database.Writers.States;
 
 /// <summary>
 /// Статус райтера

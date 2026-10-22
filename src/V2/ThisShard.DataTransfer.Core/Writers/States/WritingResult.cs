@@ -1,7 +1,7 @@
 using ThisShard.Database.Models.Rows;
 using ThisShard.Database.Readers;
 
-namespace ThisShard.Database.Writers;
+namespace ThisShard.Database.Writers.States;
 
 /// <summary>
 /// Результат записи

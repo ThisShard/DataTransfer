@@ -1,3 +1,5 @@
+using ThisShard.Database.Writers.States;
+
 namespace ThisShard.Database.Writers;
 
 public class CompositeWriter : BufferedWriter

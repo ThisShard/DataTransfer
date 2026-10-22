@@ -1,5 +1,5 @@
 
-namespace ThisShard.Database.Writers;
+namespace ThisShard.Database.Writers.CommandFilters;
 
 /// <summary>
 /// Контекст для фабрики фильтров команд

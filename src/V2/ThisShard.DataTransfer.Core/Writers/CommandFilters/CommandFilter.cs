@@ -1,4 +1,4 @@
-namespace ThisShard.Database.Writers;
+namespace ThisShard.Database.Writers.CommandFilters;
 
 /// <summary>
 /// Дополнительное условие фильтрации для команд писателя
